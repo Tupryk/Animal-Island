@@ -1,6 +1,6 @@
 #include "App.h"
 
-App::App() : animvis()
+App::App() : terrain(), animvis()
 {
     
 }
@@ -12,7 +12,8 @@ void App::update()
 
 void App::draw()
 {
- 	animvis.draw(renderer);
+ 	// animvis.draw(renderer);
+ 	displayTerrain(renderer, &terrain);
 }
 
 void App::run()
@@ -24,9 +25,9 @@ void App::run()
 
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-
-	 while (true)
-	 {
+	
+	while (true)
+	{
 	 	if (std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() > 1000/fps)
 	 	{
 	 		begin = std::chrono::steady_clock::now();

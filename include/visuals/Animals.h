@@ -23,6 +23,8 @@ struct Limb
 	std::vector<Segment> segs;
 	unsigned int seg_count;
 	vec2d base;
+	float leg_origin = 100;
+	float speed = 5;
 
 	Limb(unsigned int seg_count=10, float seg_len=32, vec2d base={300, 0});
 	void update(vec2d follows);

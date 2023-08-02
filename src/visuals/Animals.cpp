@@ -30,6 +30,9 @@ Limb::Limb(unsigned int seg_count, float seg_len, vec2d base) :
 }
 
 void Limb::update(vec2d follows) {
+	leg_origin += speed;
+	if (leg_origin >= 500 || leg_origin <= 100) speed *= -1;
+
 	segs[0].follow(follows);
     segs[0].update();
 
@@ -38,7 +41,8 @@ void Limb::update(vec2d follows) {
         segs[i].update();
     }
 
-    segs[seg_count-1].set_origin(base);
+    float visual_x = cos( (-.5 * (leg_origin-100)/400) * M_PI ) * 400 + 100;
+    segs[seg_count-1].set_origin({visual_x, 100});
 
     for (int i = seg_count-2; i > -1; i--)
         segs[i].set_origin(segs[i+1].end);
