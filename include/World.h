@@ -11,6 +11,7 @@ class World
     static const unsigned int chunk_size = 64;
 	Chunk chunks[dimensions][dimensions];
 	std::vector<Cat> cats;
+	std::vector<Squirrel> squirrels;
 
 public:
 	World();

@@ -3,7 +3,7 @@
 Chunk::Chunk(ChunkTypes type) : type(type)
 {
 	if (type == ChunkTypes::VALLEY) {
-		unsigned int trees_count = rand()%5;
+		unsigned int trees_count = rand()%3;
 
 		for (int i = 0; i < trees_count; i++)
 		{

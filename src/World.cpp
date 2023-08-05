@@ -40,33 +40,33 @@ World::World()
 			chunks[i][j] = Chunk(ChunkTypes::SEA);
 		}}
 
-	// Setup chunk neighbours
+	// Setup chunk neighbors
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
-		if (i != 0 && j != 0) chunks[i][j].neighbours[0] = &chunks[i-1][j-1];
-		else chunks[i][j].neighbours[0] = NULL;
+		if (i != 0 && j != 0) chunks[i][j].neighbors[0] = &chunks[i-1][j-1];
+		else chunks[i][j].neighbors[0] = NULL;
 
-		if (j != 0) chunks[i][j].neighbours[1] = &chunks[i][j-1];
-		else chunks[i][j].neighbours[1] = NULL;
+		if (j != 0) chunks[i][j].neighbors[1] = &chunks[i][j-1];
+		else chunks[i][j].neighbors[1] = NULL;
 
-		if (i != dimensions-1 && j != 0) chunks[i][j].neighbours[2] = &chunks[i+1][j-1];
-		else chunks[i][j].neighbours[2] = NULL;
+		if (i != dimensions-1 && j != 0) chunks[i][j].neighbors[2] = &chunks[i+1][j-1];
+		else chunks[i][j].neighbors[2] = NULL;
 
-		if (i != 0) chunks[i][j].neighbours[3] = &chunks[i-1][j];
-		else chunks[i][j].neighbours[3] = NULL;
+		if (i != 0) chunks[i][j].neighbors[3] = &chunks[i-1][j];
+		else chunks[i][j].neighbors[3] = NULL;
 
-		if (i != dimensions-1) chunks[i][j].neighbours[4] = &chunks[i+1][j];
-		else chunks[i][j].neighbours[4] = NULL;
+		if (i != dimensions-1) chunks[i][j].neighbors[4] = &chunks[i+1][j];
+		else chunks[i][j].neighbors[4] = NULL;
 
-		if (i != 0 && j != dimensions-1) chunks[i][j].neighbours[5] = &chunks[i-1][j+1];
-		else chunks[i][j].neighbours[5] = NULL;
+		if (i != 0 && j != dimensions-1) chunks[i][j].neighbors[5] = &chunks[i-1][j+1];
+		else chunks[i][j].neighbors[5] = NULL;
 
-		if (j != dimensions-1) chunks[i][j].neighbours[6] = &chunks[i][j+1];
-		else chunks[i][j].neighbours[6] = NULL;
+		if (j != dimensions-1) chunks[i][j].neighbors[6] = &chunks[i][j+1];
+		else chunks[i][j].neighbors[6] = NULL;
 
-		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbours[7] = &chunks[i+1][j+1];
-		else chunks[i][j].neighbours[7] = NULL;
+		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbors[7] = &chunks[i+1][j+1];
+		else chunks[i][j].neighbors[7] = NULL;
 	}}
 
 	// Generate cats
@@ -75,14 +75,28 @@ World::World()
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int cat_count = rand()%2;
+			unsigned int cat_num = rand()%50;
 
-			for (int c = 0; c < cat_count; c++) {
+			if (cat_num == 0) {
 				float pos_x = rand()%chunk_size+(i*chunk_size);
 				float pos_y = rand()%chunk_size+(j*chunk_size);
 
 				cats.push_back(Cat({pos_x, pos_y}));
-				chunks[i][j].cats.push_back(&cats[cats.size()-1]);
+			}}}}
+
+	// Generate squirrels
+	for (int i = 0; i < dimensions; i++) {
+	for (int j = 0; j < dimensions; j++)
+	{
+		if (chunks[i][j].type == ChunkTypes::VALLEY ||
+			chunks[i][j].type == ChunkTypes::GRASS) {
+			unsigned int cat_num = rand()%40;
+
+			if (cat_num == 0) {
+				float pos_x = rand()%chunk_size+(i*chunk_size);
+				float pos_y = rand()%chunk_size+(j*chunk_size);
+
+				squirrels.push_back(Squirrel({pos_x, pos_y}));
 			}}}}
 }
 
@@ -92,7 +106,17 @@ void World::update()
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].update();
 
-	for (int i = 0; i < cats.size(); i++) cats[i].update();
+	for (int i = 0; i < cats.size(); i++) {
+		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
+		cats[i].update(chunks[cx][cy].neighbors);
+	}
+
+	for (int i = 0; i < squirrels.size(); i++) {
+		unsigned int cx = squirrels[i].pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = squirrels[i].pos.y / static_cast<float>(chunk_size);
+		squirrels[i].update(chunks[cx][cy].neighbors);
+	}
 }
 
 void World::draw(SDL_Renderer* renderer)
@@ -131,4 +155,8 @@ void World::draw(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	for (auto cat : cats)
 		SDL_RenderFillCircle(renderer, cat.pos.x * width / chunk_size, cat.pos.y * height / chunk_size, 1);
+
+	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
+	for (auto squirrel : squirrels)
+		SDL_RenderFillCircle(renderer, squirrel.pos.x * width / chunk_size, squirrel.pos.y * height / chunk_size, 1);
 }
