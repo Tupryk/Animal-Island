@@ -1,14 +1,20 @@
 #pragma once
 
-#include "utils.h"
+#include <vector>
 
-enum ChunkTypes { LAND, SEA, SAND };
+#include "utils.h"
+#include "beings/Plants.h"
+
+enum ChunkTypes { GRASS, VALLEY, SEA, SAND };
 
 struct Chunk
 {
 	ChunkTypes type;
+	unsigned int size = 64;
+	std::vector<Tree> trees;
 
 	Chunk(ChunkTypes type = ChunkTypes::SEA);
+	void update();
 };
 
 struct Terrain

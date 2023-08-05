@@ -1,17 +1,22 @@
 #pragma once
 
-enum TreeStates { SEED, SMALL, BIG };
+#include <iostream>
+
+#include "utils.h"
+
+enum TreeState { SEED, SMALL, BIG };
 
 class Tree
 {
 	unsigned int cycle = 0;
-	unsigned int cycle_limit = 256; // After this many timesteps the tree drops nuts.
-	unsigned int age = 0;
-	unsigned int state_transition = 16; // Cycles until growth.
-	TreeStates state;
+	unsigned int cycle_limit = 256; // After this many days the tree drops nuts.
 
 	void drop_seeds();
 
 public:
+	TreeState state;
+	vec2d pos;
+
+	Tree(vec2d pos);
 	void update();
 };

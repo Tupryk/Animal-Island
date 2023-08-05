@@ -16,7 +16,7 @@ double grad(int hash, double x) {
 }
 
 // Function to calculate 1D Perlin noise
-double perlinNoise1D(double x)
+double perlinNoise1D(double x, int seed)
 {
     std::vector<int> permutationTable = {
         151, 160, 137, 91, 90, 15, 131, 13, 201, 95, 96, 53, 194, 233, 7, 225, 140, 36, 103, 30,
@@ -33,8 +33,7 @@ double perlinNoise1D(double x)
         199, 106, 157, 184, 84, 204, 176, 115, 121, 50, 45, 127, 4, 150, 254, 138, 236, 205, 93, 222,
         114, 67, 29, 24, 72, 243, 141, 128, 195, 78, 66, 215, 61, 156, 180
     };
-    static const unsigned int seed = std::chrono::system_clock::now().time_since_epoch().count();
-    auto rng = std::default_random_engine {seed};
+    auto rng = std::default_random_engine{static_cast<std::default_random_engine::result_type>(seed)};
     std::shuffle(std::begin(permutationTable), std::end(permutationTable), rng);
 
     // Determine grid cell coordinates

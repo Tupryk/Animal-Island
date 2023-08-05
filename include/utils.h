@@ -45,7 +45,7 @@ struct vec2d
 
 double lerp(double a, double b, double t);
 double grad(int hash, double x);
-double perlinNoise1D(double x);
+double perlinNoise1D(double x, int seed);
 
 int SDL_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int radius);
 int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius);
