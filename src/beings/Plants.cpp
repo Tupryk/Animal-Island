@@ -15,6 +15,5 @@ void Tree::update()
 
 void Tree::drop_seeds()
 {
-	unsigned int seed_count = rand()%3 + 4;
-	std::cout << "Dropped " << seed_count << " seeds." << std::endl;
+	// unsigned int seed_count = rand()%3 + 4;
 }

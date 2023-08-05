@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include "utils.h"
 
 enum TreeState { SEED, SMALL, BIG };

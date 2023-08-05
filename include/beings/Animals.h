@@ -4,9 +4,12 @@
 
 class Cat
 {
-	vec2d speed;
-	vec2d pos;
+	float max_speed = 1;
+	vec2d velocity;
 
 public:
+	vec2d pos;
+
+	Cat(vec2d pos);
 	void update();
 };
