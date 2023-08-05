@@ -1,11 +1,9 @@
 #pragma once
 
+#include <iostream>
 #include <SDL2/SDL.h>
 
-#include "terrain/Chunks.h"
-
-#include "visuals/Animals.h"
-#include "visuals/Terrain.h"
+#include "World.h"
 
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 400
@@ -15,8 +13,7 @@ class App
     SDL_Renderer *renderer;
     SDL_Window *window;
 
-    Terrain terrain;
-    AnimalVisual animvis;
+    World world;
 
     unsigned int fps = 60;
 

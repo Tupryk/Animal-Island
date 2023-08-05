@@ -1,5 +1,9 @@
 #pragma once
 
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <random>
 #include <SDL2/SDL.h>
 
 struct vec2d
@@ -27,7 +31,21 @@ struct vec2d
     float get_length() {
     	return sqrt(x*x + y*y);
     }
+
+    float get_degree() {
+        double radians = std::atan2(y, x);
+        double degrees = radians * (180.0 / M_PI);
+        degrees = fmod(degrees, 360.0);
+        if (degrees < 0) {
+            degrees += 360.0;
+        }
+        return degrees;
+    }
 };
+
+double lerp(double a, double b, double t);
+double grad(int hash, double x);
+double perlinNoise1D(double x);
 
 int SDL_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int radius);
 int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius);

@@ -1,19 +1,15 @@
 #include "App.h"
 
-App::App() : terrain(), animvis()
-{
-    
-}
+App::App() : world() { srand( time( NULL ) ); }
 
 void App::update()
 {
-	animvis.update();
+	world.update();
 }
 
 void App::draw()
 {
- 	// animvis.draw(renderer);
- 	displayTerrain(renderer, &terrain);
+ 	world.draw(renderer);
 }
 
 void App::run()

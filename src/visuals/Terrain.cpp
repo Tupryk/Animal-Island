@@ -2,8 +2,8 @@
 
 void displayTerrain(SDL_Renderer* renderer, Terrain* terrain)
 {
-	float width = 600/terrain->dimensions;
-	float heigth = 400/terrain->dimensions;
+	float width = 420/terrain->dimensions;
+	float heigth = 420/terrain->dimensions;
 
 	for (int i = 0; i < terrain->dimensions; i++) {
 	for (int j = 0; j < terrain->dimensions; j++)
@@ -19,6 +19,9 @@ void displayTerrain(SDL_Renderer* renderer, Terrain* terrain)
 
 		else if (terrain->chunks[i][j].type == ChunkTypes::LAND)
 			SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+
+		else if (terrain->chunks[i][j].type == ChunkTypes::SAND)
+			SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
 
 		else SDL_SetRenderDrawColor(renderer, 255, 192, 203, 255);
 

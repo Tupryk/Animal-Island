@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-enum ChunkTypes { LAND, SEA };
+enum ChunkTypes { LAND, SEA, SAND };
 
 struct Chunk
 {
@@ -13,7 +13,7 @@ struct Chunk
 
 struct Terrain
 {
-	static const unsigned int dimensions = 64;
+	static const unsigned int dimensions = 100;
 	Chunk chunks[dimensions][dimensions];
 
 	Terrain();
