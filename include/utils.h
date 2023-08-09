@@ -54,3 +54,5 @@ double perlinNoise1D(double x, int seed);
 
 int SDL_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int radius);
 int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius);
+
+int SDL_RenderFillAlmond(SDL_Renderer * renderer, int x, int y, int y0, int y1, int radius0, int radius1);

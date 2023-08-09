@@ -22,17 +22,18 @@ struct Limb
 {
 	std::vector<Segment> segs;
 	unsigned int seg_count;
-	vec2d base;
-	float leg_origin = 100;
-	float speed = 5;
+	vec2d* base;
 
-	Limb(unsigned int seg_count=10, float seg_len=32, vec2d base={300, 0});
+	Limb(vec2d* base, unsigned int seg_count, float seg_len);
 	void update(vec2d follows);
 };
 
 class AnimalVisual
 {
-	std::vector<Limb> limbs;
+	vec2d pos;
+	static const unsigned int limb_count = 4;
+	vec2d body_joints[limb_count];
+	Limb limbs[limb_count];
 	float leg_target = 100;
 	float speed = 7;
 	vec2d visual_coors;

@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "World.h"
+#include "visuals/Animals.h"
 
 #define WINDOW_WIDTH 600
 #define WINDOW_HEIGHT 400
@@ -14,6 +15,7 @@ class App
     SDL_Window *window;
 
     World world;
+    AnimalVisual av;
 
     unsigned int fps = 60;
 

@@ -145,3 +145,22 @@ int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius)
 
     return status;
 }
+
+int SDL_RenderFillAlmond(SDL_Renderer* renderer, int x, int y, int y0, int y1, int radius0, int radius1)
+{
+    int status = 0;
+
+    for (int yOffset = y0; yOffset <= y1; ++yOffset) {
+        // Calculate the corresponding x radius for each y offset
+        int xRadius = radius0 + (radius1 - radius0) * (yOffset - y0) / (y1 - y0);
+
+        status += SDL_RenderDrawLine(renderer, x - xRadius, y + yOffset, x + xRadius, y + yOffset);
+
+        if (status < 0) {
+            status = -1;
+            break;
+        }
+    }
+
+    return status;
+}
