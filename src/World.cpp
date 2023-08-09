@@ -109,7 +109,7 @@ void World::update()
 	for (int i = 0; i < cats.size(); i++) {
 		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
-		cats[i].update(chunks[cx][cy].neighbors);
+		cats[i].update(chunks[cx][cy].neighbors, squirrels);
 	}
 
 	for (int i = 0; i < squirrels.size(); i++) {

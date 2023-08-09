@@ -41,6 +41,11 @@ struct vec2d
         }
         return degrees;
     }
+
+    vec2d norm() {
+        float length = get_length();
+        return vec2d(x/length, y/length);
+    }
 };
 
 double lerp(double a, double b, double t);
