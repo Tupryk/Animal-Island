@@ -70,6 +70,7 @@ World::World()
 	}}
 
 	// Generate cats
+	/*
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -82,7 +83,7 @@ World::World()
 				float pos_y = rand()%chunk_size+(j*chunk_size);
 
 				cats.push_back(Cat({pos_x, pos_y}));
-			}}}}
+			}}}}*/
 
 	// Generate squirrels
 	for (int i = 0; i < dimensions; i++) {
@@ -113,15 +114,16 @@ void World::update()
 	for (int i = 0; i < cats.size(); i++) {
 		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
-		if (cats[i].getHealth() <= 0) cats.erase(cats.begin() + i);
-		else cats[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
+		AnimalState status = cats[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
+		if (status == AnimalState::DEAD) cats.erase(cats.begin() + i);
 	}
 
 	for (int i = 0; i < squirrels.size(); i++) {
 		unsigned int cx = squirrels[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = squirrels[i].pos.y / static_cast<float>(chunk_size);
-		if (squirrels[i].getHealth() <= 0) squirrels.erase(squirrels.begin() + i);
-		else squirrels[i].update(chunks[cx][cy].neighbors);
+		AnimalState status = squirrels[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
+		if (status == AnimalState::DEAD) squirrels.erase(squirrels.begin() + i);
+		else if (status == AnimalState::HAD_CHILD) squirrels.push_back(Squirrel(squirrels[i].pos));
 	}
 }
 
@@ -142,9 +144,11 @@ void World::draw(SDL_Renderer* renderer)
 		if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
-		else if (chunks[i][j].type == ChunkTypes::GRASS
-			|| chunks[i][j].type == ChunkTypes::VALLEY)
+		else if (chunks[i][j].type == ChunkTypes::GRASS)
 			SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+
+		else if (chunks[i][j].type == ChunkTypes::VALLEY)
+			SDL_SetRenderDrawColor(renderer, 0, 220, 0, 255);
 
 		else if (chunks[i][j].type == ChunkTypes::SAND)
 			SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);

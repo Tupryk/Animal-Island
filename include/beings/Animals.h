@@ -5,6 +5,8 @@
 #include "utils.h"
 #include "terrain/Chunks.h"
 
+enum AnimalState { DEFAULT, HAD_CHILD, DEAD };
+
 struct Animal
 {
 	float max_speed = 1;
@@ -23,6 +25,16 @@ struct Animal
 	float health = max_health;
 	float strength = 50;
 
+	float see_distance = 10; // How far can be seen in front (meters)
+	float fov = 10; // Field of view in degrees
+	vec2d look_dir; // direction being looked at
+
+	bool is_male = true;
+	int pregnant = -1;
+	int pregnancy_time = 100;
+
+	unsigned int age = 0;
+
 	float getHealth();
 	void hurt(float damage);
 };
@@ -31,12 +43,13 @@ class Squirrel : public Animal
 {
 public:
 	Squirrel(vec2d pos);
-	void update(Chunk* neighbors[]);
+	AnimalState update(Chunk* neighbors[], std::vector<Squirrel*> squirrels);
+	void give_pregnancy();
 };
 
 class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	void update(Chunk* neighbors[], std::vector<Squirrel*> squirrels);
+	AnimalState update(Chunk* neighbors[], std::vector<Squirrel*> squirrels);
 };
