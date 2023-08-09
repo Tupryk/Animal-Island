@@ -106,16 +106,22 @@ void World::update()
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].update();
 
+	std::vector<Squirrel*> pointerSquirrels;
+
+    for (Squirrel& s : squirrels) pointerSquirrels.push_back(&s);
+
 	for (int i = 0; i < cats.size(); i++) {
 		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
-		cats[i].update(chunks[cx][cy].neighbors, squirrels);
+		if (cats[i].getHealth() <= 0) cats.erase(cats.begin() + i);
+		else cats[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
 	}
 
 	for (int i = 0; i < squirrels.size(); i++) {
 		unsigned int cx = squirrels[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = squirrels[i].pos.y / static_cast<float>(chunk_size);
-		squirrels[i].update(chunks[cx][cy].neighbors);
+		if (squirrels[i].getHealth() <= 0) squirrels.erase(squirrels.begin() + i);
+		else squirrels[i].update(chunks[cx][cy].neighbors);
 	}
 }
 

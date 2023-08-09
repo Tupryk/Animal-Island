@@ -17,6 +17,8 @@ Chunk::Chunk(ChunkTypes type) : type(type)
 
 void Chunk::update()
 {
-	for (int i = 0; i < trees.size(); i++)
-		trees[i].update();
+	for (int i = 0; i < trees.size(); i++) {
+		if (trees[i].getHealth() <= 0) trees.erase(trees.begin() + i);
+		else trees[i].update();
+	}
 }
