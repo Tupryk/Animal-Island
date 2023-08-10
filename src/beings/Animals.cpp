@@ -49,7 +49,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 
 		if (squirrel_direction.get_length() < 10) {
 			closest_squirrel->hurt(strength);
-			if (closest_squirrel->getHealth() <= 0) hunger += closest_squirrel->size*100;
+			if (closest_squirrel->getHealth() <= 0) hunger += closest_squirrel->size*1000;
 		}
 		cycle_counter = 0;
 	}
@@ -97,6 +97,9 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 {
 	if (health <= 0) return AnimalState::DEAD;
 
+	horny++;
+	if (horny > horny_threshold) horny = horny_threshold;
+
 	std::vector<Squirrel*> candidates;
 	if (squirrels.size() > 0 && this->pregnant < 0)
 	{
@@ -106,7 +109,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 		}
 	}
 
-	if (candidates.size() > 0) {
+	if (candidates.size() > 0 && horny >= horny_threshold) {
 		Squirrel* closest_squirrel = candidates[0];
 		// Chase prey
 		for (int i = 1; i < candidates.size(); i++) {
@@ -119,8 +122,10 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 		velocity = squirrel_direction.norm() * max_speed;
 
-		if (squirrel_direction.get_length() < 10 && is_male)
+		if (squirrel_direction.get_length() < 10 && is_male) {
 			closest_squirrel->give_pregnancy();
+			horny = 0;
+		}
 		cycle_counter = 0;
 	}
 	else {

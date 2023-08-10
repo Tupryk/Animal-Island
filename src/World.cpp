@@ -70,20 +70,19 @@ World::World()
 	}}
 
 	// Generate cats
-	/*
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int cat_num = rand()%50;
+			unsigned int cat_num = rand()%100;
 
 			if (cat_num == 0) {
 				float pos_x = rand()%chunk_size+(i*chunk_size);
 				float pos_y = rand()%chunk_size+(j*chunk_size);
 
 				cats.push_back(Cat({pos_x, pos_y}));
-			}}}}*/
+			}}}}
 
 	// Generate squirrels
 	for (int i = 0; i < dimensions; i++) {
@@ -91,7 +90,7 @@ World::World()
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int cat_num = rand()%40;
+			unsigned int cat_num = rand()%30;
 
 			if (cat_num == 0) {
 				float pos_x = rand()%chunk_size+(i*chunk_size);

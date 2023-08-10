@@ -18,7 +18,7 @@ struct Animal
 	unsigned int cycle_counter = 0;
 	unsigned int cycle_limit = 0;
 
-	float max_hunger = 1000;
+	float max_hunger = 10000;
 	float hunger = max_hunger;
 
 	float max_health = 100;
@@ -32,6 +32,8 @@ struct Animal
 	bool is_male = true;
 	int pregnant = -1;
 	int pregnancy_time = 100;
+	int horny = 0;
+	int horny_threshold = 100;
 
 	unsigned int age = 0;
 
