@@ -17,6 +17,8 @@ class App
     World world;
     AnimalVisual av;
 
+    SDL_Event event;
+
     unsigned int fps = 60;
 
     void update();

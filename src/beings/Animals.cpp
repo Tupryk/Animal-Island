@@ -1,7 +1,12 @@
 #include "beings/Animals.h"
 
+void Animal::updade_vel()
+{
+	vec2d tmp = vel + acc;
+	vel = tmp - tmp*friction;
+}
+
 Cat::Cat(vec2d pos) : Animal() {
-	velocity = {0, 0};
 	this->pos = pos;
 	is_male = rand()%2 == 0;
 }
@@ -31,7 +36,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 		Squirrel* closest_squirrel;
 		unsigned int start_index = 0;
 		while(start_index < squirrels.size()) {
-			if (squirrels[start_index]->getHealth() > 0) {
+			if (squirrels[start_index]->getHealth() > 0 && !squirrels[start_index]->on_tree) {
 				closest_squirrel = squirrels[start_index];
 				break;
 			}
@@ -41,11 +46,11 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 			vec2d squirrel_direction_new(squirrels[i]->pos.x - pos.x, squirrels[i]->pos.y - pos.y);
 
-			if (squirrel_direction.get_length() > squirrel_direction_new.get_length() && squirrels[i]->getHealth() > 0)
+			if (squirrel_direction.get_length() > squirrel_direction_new.get_length() && squirrels[i]->getHealth() > 0 && !squirrels[i]->on_tree)
 				closest_squirrel = squirrels[i];
 		}
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-		velocity = squirrel_direction.norm() * max_speed;
+		acc = squirrel_direction.norm() * max_speed;
 
 		if (squirrel_direction.get_length() < 10) {
 			closest_squirrel->hurt(strength);
@@ -59,28 +64,28 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 		if (cycle_counter >= cycle_limit) {
 			cycle_counter = 0;
 			cycle_limit = 64+rand()%256;
-			velocity = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
+			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
 	}
 
 	// Don't jump into water
-	if (velocity.x > 0 && (
+	if (acc.x > 0 && (
 		neighbors[4]->type == ChunkTypes::SAND ||
 		neighbors[2]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) velocity.x *= -1;
-	if (velocity.x < 0 && (
+		neighbors[7]->type == ChunkTypes::SAND)) acc.x *= -1;
+	if (acc.x < 0 && (
 		neighbors[0]->type == ChunkTypes::SAND ||
 		neighbors[3]->type == ChunkTypes::SAND ||
-		neighbors[5]->type == ChunkTypes::SAND)) velocity.x *= -1;
-	if (velocity.y > 0 && (
+		neighbors[5]->type == ChunkTypes::SAND)) acc.x *= -1;
+	if (acc.y > 0 && (
 		neighbors[5]->type == ChunkTypes::SAND ||
 		neighbors[6]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) velocity.y *= -1;
-	if (velocity.y < 0 && (
+		neighbors[7]->type == ChunkTypes::SAND)) acc.y *= -1;
+	if (acc.y < 0 && (
 		neighbors[0]->type == ChunkTypes::SAND ||
 		neighbors[1]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND)) velocity.y *= -1;
-	pos = pos + velocity;
+		neighbors[2]->type == ChunkTypes::SAND)) acc.y *= -1;
+	pos = pos + vel + ( acc * .5 );
 
 	if (health > max_health) health = max_health;
 
@@ -88,7 +93,6 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {
-	velocity = {0, 0};
 	this->pos = pos;
 	is_male = rand()%2 == 0;
 }
@@ -120,7 +124,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 				closest_squirrel = candidates[i];
 		}
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-		velocity = squirrel_direction.norm() * max_speed;
+		acc = squirrel_direction.norm() * max_speed;
 
 		if (squirrel_direction.get_length() < 10 && is_male) {
 			closest_squirrel->give_pregnancy();
@@ -133,27 +137,27 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 		if (cycle_counter >= cycle_limit) {
 			cycle_counter = 0;
 			cycle_limit = 64+rand()%256;
-			velocity = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
+			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
 	}
 
-	if (velocity.x > 0 && (
+	if (acc.x > 0 && (
 		neighbors[4]->type == ChunkTypes::SAND ||
 		neighbors[2]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) velocity.x *= -1;
-	if (velocity.x < 0 && (
+		neighbors[7]->type == ChunkTypes::SAND)) acc.x *= -1;
+	if (acc.x < 0 && (
 		neighbors[0]->type == ChunkTypes::SAND ||
 		neighbors[3]->type == ChunkTypes::SAND ||
-		neighbors[5]->type == ChunkTypes::SAND)) velocity.x *= -1;
-	if (velocity.y > 0 && (
+		neighbors[5]->type == ChunkTypes::SAND)) acc.x *= -1;
+	if (acc.y > 0 && (
 		neighbors[5]->type == ChunkTypes::SAND ||
 		neighbors[6]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) velocity.y *= -1;
-	if (velocity.y < 0 && (
+		neighbors[7]->type == ChunkTypes::SAND)) acc.y *= -1;
+	if (acc.y < 0 && (
 		neighbors[0]->type == ChunkTypes::SAND ||
 		neighbors[1]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND)) velocity.y *= -1;
-	pos = pos + velocity;
+		neighbors[2]->type == ChunkTypes::SAND)) acc.y *= -1;
+	pos = pos + vel + ( acc * .5 );
 
 	if (pregnant >= 0) pregnant++;
 	if (pregnant >= pregnancy_time) {
@@ -167,3 +171,21 @@ void Squirrel::give_pregnancy() { pregnant = 0; }
 
 float Animal::getHealth() { return health; }
 void Animal::hurt(float damage) { health -= damage; }
+
+Shark::Shark(vec2d pos) : Animal() {
+	this->pos = pos;
+	is_male = rand()%2 == 0;
+	friction = 0;
+}
+
+AnimalState Shark::update(Chunk* neighbors[])
+{
+	cycle_counter++;
+	if (cycle_counter >= cycle_limit) {
+		cycle_counter = 0;
+		cycle_limit = 64+rand()%256;
+		acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
+	}
+	pos = pos + vel + ( acc * .5 );
+	return AnimalState::DEFAULT;
+}

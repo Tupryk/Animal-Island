@@ -19,8 +19,6 @@ void App::run()
     SDL_Init(SDL_INIT_VIDEO);
 	SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_HEIGHT, 0, &window, &renderer);
 
-	SDL_Event event;
-
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	
@@ -30,8 +28,17 @@ void App::run()
 	 	{
 	 		begin = std::chrono::steady_clock::now();
 
-			if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-				break;
+			if (SDL_PollEvent(&event)) {
+				if (event.type == SDL_QUIT)
+					break;
+				if (event.type == SDL_KEYDOWN) {
+					if (event.key.keysym.sym == SDLK_k)
+	                   world.display_stats = true;
+	              	else if (event.key.keysym.sym == SDLK_q)
+	              		world.display_stats = false;
+				}
+			}
+
 			SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
 			SDL_RenderClear(renderer);
 

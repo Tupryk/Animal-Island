@@ -75,9 +75,9 @@ World::World()
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int cat_num = rand()%100;
+			unsigned int num = rand()%100;
 
-			if (cat_num == 0) {
+			if (num == 0) {
 				float pos_x = rand()%chunk_size+(i*chunk_size);
 				float pos_y = rand()%chunk_size+(j*chunk_size);
 
@@ -90,14 +90,30 @@ World::World()
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int cat_num = rand()%30;
+			unsigned int num = rand()%30;
 
-			if (cat_num == 0) {
+			if (num == 0) {
 				float pos_x = rand()%chunk_size+(i*chunk_size);
 				float pos_y = rand()%chunk_size+(j*chunk_size);
 
 				squirrels.push_back(Squirrel({pos_x, pos_y}));
+				chunks[i][j].animals.push_back(&squirrels[squirrels.size()-1]);
 			}}}}
+	/*
+	// Generate sharks
+	for (int i = 0; i < dimensions; i++) {
+	for (int j = 0; j < dimensions; j++)
+	{
+		if (chunks[i][j].type == ChunkTypes::SEA) {
+			unsigned int num = rand()%30;
+
+			if (num == 0) {
+				float pos_x = rand()%chunk_size+(i*chunk_size);
+				float pos_y = rand()%chunk_size+(j*chunk_size);
+
+				sharks.push_back(Shark({pos_x, pos_y}));
+			}}}}
+	*/
 }
 
 void World::update()
@@ -113,6 +129,7 @@ void World::update()
 	for (int i = 0; i < cats.size(); i++) {
 		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
+
 		AnimalState status = cats[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
 		if (status == AnimalState::DEAD) cats.erase(cats.begin() + i);
 	}
@@ -124,10 +141,21 @@ void World::update()
 		if (status == AnimalState::DEAD) squirrels.erase(squirrels.begin() + i);
 		else if (status == AnimalState::HAD_CHILD) squirrels.push_back(Squirrel(squirrels[i].pos));
 	}
+
+	for (int i = 0; i < sharks.size(); i++) {
+		unsigned int cx = sharks[i].pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = sharks[i].pos.y / static_cast<float>(chunk_size);
+		sharks[i].update(chunks[cx][cy].neighbors);
+	}
+	if (KEEP_STATS) update_stats();
 }
 
 void World::draw(SDL_Renderer* renderer)
 {
+    if (display_stats) {
+    	render_stats(renderer);
+    	return; }
+
 	float width = 420/dimensions;
 	float height = 420/dimensions;
 
@@ -140,7 +168,11 @@ void World::draw(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
-		if (chunks[i][j].type == ChunkTypes::SEA)
+	    /*
+	    if (chunks[i][j].animals.size() > 0)
+	    	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+		else*/ if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
 		else if (chunks[i][j].type == ChunkTypes::GRASS)
@@ -156,7 +188,7 @@ void World::draw(SDL_Renderer* renderer)
 
 		SDL_RenderFillRect(renderer, &rect);
 
-		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+		SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
 		for (auto tree : chunks[i][j].trees)
 			SDL_RenderFillCircle(renderer, rect.x+(tree.pos.x*width/chunk_size), rect.y+(tree.pos.y*height/chunk_size), 1);
 	}}
@@ -168,4 +200,39 @@ void World::draw(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
 	for (auto squirrel : squirrels)
 		SDL_RenderFillCircle(renderer, squirrel.pos.x * width / chunk_size, squirrel.pos.y * height / chunk_size, 1);
+
+	SDL_SetRenderDrawColor(renderer, 128, 128, 255, 255);
+	for (auto shark : sharks)
+		SDL_RenderFillCircle(renderer, shark.pos.x * width / chunk_size, shark.pos.y * height / chunk_size, 1);
+}
+
+void World::update_stats() {
+	squirrel_population.push_back(squirrels.size());
+	cat_population.push_back(cats.size());
+}
+
+void World::render_stats(SDL_Renderer* renderer)
+{
+	if (squirrel_population.size() < 64 || squirrel_population.size() != cat_population.size()) return;
+
+	auto max_pointer = std::max_element(squirrel_population.begin(), squirrel_population.end());
+	unsigned int squirrel_max_y = *max_pointer;
+
+	max_pointer = std::max_element(cat_population.begin(), cat_population.end());
+	unsigned int cat_max_y = *max_pointer;
+
+	float max_y;
+	squirrel_max_y > cat_max_y ? max_y = max_y = squirrel_max_y : max_y = cat_max_y;
+
+	float W = 600;
+	float H = 400;
+	float x_section_size = W/static_cast<float>(cat_population.size());
+
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	for (int i = 64; i < cat_population.size(); i+=cat_population.size()/64)
+		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, cat_population[i-64]*H/max_y, i*x_section_size, cat_population[i]*H/max_y);
+
+	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
+	for (int i = 64; i < squirrel_population.size(); i+=squirrel_population.size()/64)
+		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, squirrel_population[i-64]*H/max_y, i*x_section_size, squirrel_population[i]*H/max_y);
 }
