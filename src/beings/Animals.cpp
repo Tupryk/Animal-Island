@@ -6,12 +6,16 @@ void Animal::updade_vel()
 	vel = tmp - tmp*friction;
 }
 
+AnimalState Animal::update(Chunk* neighbors[], std::vector<Animal*> animals) {
+    return AnimalState::DEFAULT;
+}
+
 Cat::Cat(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
 }
 
-AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
+AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
@@ -30,7 +34,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 		hunger--;
 	}
 	if (hunger > max_hunger) hunger = max_hunger;
-
+	/*
 	if (squirrels.size() > 0 && hunger < max_hunger*.75) {
 		// Chase prey
 		Squirrel* closest_squirrel;
@@ -58,7 +62,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 		}
 		cycle_counter = 0;
 	}
-	else {
+	else {*/
 		// Update random walking
 		cycle_counter++;
 		if (cycle_counter >= cycle_limit) {
@@ -66,8 +70,8 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
 			cycle_limit = 64+rand()%256;
 			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
-	}
-
+	//}
+	
 	// Don't jump into water
 	if (acc.x > 0 && (
 		neighbors[4]->type == ChunkTypes::SAND ||
@@ -97,13 +101,14 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 	is_male = rand()%2 == 0;
 }
 
-AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrels)
+AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
 	horny++;
 	if (horny > horny_threshold) horny = horny_threshold;
 
+	/*
 	std::vector<Squirrel*> candidates;
 	if (squirrels.size() > 0 && this->pregnant < 0)
 	{
@@ -140,7 +145,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Squirrel*> squirrel
 			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
 	}
-
+	*/
 	if (acc.x > 0 && (
 		neighbors[4]->type == ChunkTypes::SAND ||
 		neighbors[2]->type == ChunkTypes::SAND ||
@@ -172,6 +177,7 @@ void Squirrel::give_pregnancy() { pregnant = 0; }
 float Animal::getHealth() { return health; }
 void Animal::hurt(float damage) { health -= damage; }
 
+/*
 Shark::Shark(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
@@ -189,3 +195,4 @@ AnimalState Shark::update(Chunk* neighbors[])
 	pos = pos + vel + ( acc * .5 );
 	return AnimalState::DEFAULT;
 }
+*/

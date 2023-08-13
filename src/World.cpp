@@ -69,7 +69,7 @@ World::World()
 		else chunks[i][j].neighbors[7] = NULL;
 	}}
 
-	// Generate cats
+	// Generate animals
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -77,43 +77,16 @@ World::World()
 			chunks[i][j].type == ChunkTypes::GRASS) {
 			unsigned int num = rand()%100;
 
-			if (num == 0) {
-				float pos_x = rand()%chunk_size+(i*chunk_size);
-				float pos_y = rand()%chunk_size+(j*chunk_size);
-
-				cats.push_back(Cat({pos_x, pos_y}));
-			}}}}
-
-	// Generate squirrels
-	for (int i = 0; i < dimensions; i++) {
-	for (int j = 0; j < dimensions; j++)
-	{
-		if (chunks[i][j].type == ChunkTypes::VALLEY ||
-			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int num = rand()%30;
+			float pos_x = rand()%chunk_size+(i*chunk_size);
+			float pos_y = rand()%chunk_size+(j*chunk_size);
 
 			if (num == 0) {
-				float pos_x = rand()%chunk_size+(i*chunk_size);
-				float pos_y = rand()%chunk_size+(j*chunk_size);
-
-				squirrels.push_back(Squirrel({pos_x, pos_y}));
-				chunks[i][j].animals.push_back(&squirrels[squirrels.size()-1]);
-			}}}}
-	/*
-	// Generate sharks
-	for (int i = 0; i < dimensions; i++) {
-	for (int j = 0; j < dimensions; j++)
-	{
-		if (chunks[i][j].type == ChunkTypes::SEA) {
-			unsigned int num = rand()%30;
-
-			if (num == 0) {
-				float pos_x = rand()%chunk_size+(i*chunk_size);
-				float pos_y = rand()%chunk_size+(j*chunk_size);
-
-				sharks.push_back(Shark({pos_x, pos_y}));
-			}}}}
-	*/
+				std::shared_ptr<Cat> cat = std::make_shared<Cat>(vec2d(pos_x, pos_y));
+    			animals.push_back(cat);
+    		} else if (num < 4) {
+    			std::shared_ptr<Squirrel> squirrel = std::make_shared<Squirrel>(vec2d(pos_x, pos_y));
+    			animals.push_back(squirrel);
+    		}}}}
 }
 
 void World::update()
@@ -122,31 +95,26 @@ void World::update()
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].update();
 
-	std::vector<Squirrel*> pointerSquirrels;
+	std::vector<Animal*> animals_s;
+   	
+    for (auto anim = animals.begin(); anim != animals.end();) {
+        unsigned int cx = (*anim)->pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = (*anim)->pos.y / static_cast<float>(chunk_size);
 
-    for (Squirrel& s : squirrels) pointerSquirrels.push_back(&s);
+		AnimalState status = (*anim)->update(chunks[cx][cy].neighbors, animals_s);
 
-	for (int i = 0; i < cats.size(); i++) {
-		unsigned int cx = cats[i].pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = cats[i].pos.y / static_cast<float>(chunk_size);
-
-		AnimalState status = cats[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
-		if (status == AnimalState::DEAD) cats.erase(cats.begin() + i);
-	}
-
-	for (int i = 0; i < squirrels.size(); i++) {
-		unsigned int cx = squirrels[i].pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = squirrels[i].pos.y / static_cast<float>(chunk_size);
-		AnimalState status = squirrels[i].update(chunks[cx][cy].neighbors, pointerSquirrels);
-		if (status == AnimalState::DEAD) squirrels.erase(squirrels.begin() + i);
-		else if (status == AnimalState::HAD_CHILD) squirrels.push_back(Squirrel(squirrels[i].pos));
-	}
-
-	for (int i = 0; i < sharks.size(); i++) {
-		unsigned int cx = sharks[i].pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = sharks[i].pos.y / static_cast<float>(chunk_size);
-		sharks[i].update(chunks[cx][cy].neighbors);
-	}
+		if (status == AnimalState::DEAD) {
+			anim = animals.erase(anim);
+			continue;
+        }
+        else if (status == AnimalState::HAD_CHILD) {
+        	if (std::dynamic_pointer_cast<Squirrel>(*anim)) {
+            	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>((*anim)->pos);
+    			animals.push_back(child);
+        	}
+        }
+        ++anim;
+    }
 	if (KEEP_STATS) update_stats();
 }
 
@@ -193,22 +161,28 @@ void World::draw(SDL_Renderer* renderer)
 			SDL_RenderFillCircle(renderer, rect.x+(tree.pos.x*width/chunk_size), rect.y+(tree.pos.y*height/chunk_size), 1);
 	}}
 
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	for (auto cat : cats)
-		SDL_RenderFillCircle(renderer, cat.pos.x * width / chunk_size, cat.pos.y * height / chunk_size, 1);
+	for (const auto& animal : animals)
+    {
+        if (std::dynamic_pointer_cast<Cat>(animal))
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+        else if (std::dynamic_pointer_cast<Squirrel>(animal))
+        	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
 
-	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
-	for (auto squirrel : squirrels)
-		SDL_RenderFillCircle(renderer, squirrel.pos.x * width / chunk_size, squirrel.pos.y * height / chunk_size, 1);
-
-	SDL_SetRenderDrawColor(renderer, 128, 128, 255, 255);
-	for (auto shark : sharks)
-		SDL_RenderFillCircle(renderer, shark.pos.x * width / chunk_size, shark.pos.y * height / chunk_size, 1);
+        SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
+    }
 }
 
 void World::update_stats() {
-	squirrel_population.push_back(squirrels.size());
-	cat_population.push_back(cats.size());
+	int squirrelCount = std::count_if(animals.begin(), animals.end(),
+        [](const std::shared_ptr<Animal>& animal) {
+            return std::dynamic_pointer_cast<Squirrel>(animal) != nullptr;
+        });
+	squirrel_population.push_back(squirrelCount);
+    int catCount = std::count_if(animals.begin(), animals.end(),
+        [](const std::shared_ptr<Animal>& animal) {
+            return std::dynamic_pointer_cast<Cat>(animal) != nullptr;
+        });
+    cat_population.push_back(catCount);
 }
 
 void World::render_stats(SDL_Renderer* renderer)

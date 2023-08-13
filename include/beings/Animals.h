@@ -47,6 +47,8 @@ struct Animal
 	float getHealth();
 	void hurt(float damage);
 	void updade_vel();
+	virtual AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
+	virtual ~Animal() = default;
 };
 
 class Squirrel : public Animal
@@ -54,21 +56,20 @@ class Squirrel : public Animal
 public:
 	bool on_tree = false;
 	Squirrel(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::vector<Squirrel*> squirrels);
 	void give_pregnancy();
+	AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
 };
 
 class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::vector<Squirrel*> squirrels);
+	AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
 };
 
 class Shark : public Animal
 {
 public:
 	Shark(vec2d pos);
-	AnimalState update(Chunk* neighbors[]);
 };
 
