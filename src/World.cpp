@@ -56,17 +56,19 @@ World::World()
 		if (i != 0) chunks[i][j].neighbors[3] = &chunks[i-1][j];
 		else chunks[i][j].neighbors[3] = NULL;
 
-		if (i != dimensions-1) chunks[i][j].neighbors[4] = &chunks[i+1][j];
-		else chunks[i][j].neighbors[4] = NULL;
+		chunks[i][j].neighbors[4] = &chunks[i][j];
 
-		if (i != 0 && j != dimensions-1) chunks[i][j].neighbors[5] = &chunks[i-1][j+1];
+		if (i != dimensions-1) chunks[i][j].neighbors[4] = &chunks[i+1][j];
 		else chunks[i][j].neighbors[5] = NULL;
 
-		if (j != dimensions-1) chunks[i][j].neighbors[6] = &chunks[i][j+1];
+		if (i != 0 && j != dimensions-1) chunks[i][j].neighbors[5] = &chunks[i-1][j+1];
 		else chunks[i][j].neighbors[6] = NULL;
 
-		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbors[7] = &chunks[i+1][j+1];
+		if (j != dimensions-1) chunks[i][j].neighbors[6] = &chunks[i][j+1];
 		else chunks[i][j].neighbors[7] = NULL;
+
+		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbors[7] = &chunks[i+1][j+1];
+		else chunks[i][j].neighbors[8] = NULL;
 	}}
 
 	// Generate animals
@@ -115,6 +117,17 @@ void World::update()
         }
         ++anim;
     }
+
+    for (int i = 0; i < dimensions; i++)
+		for (int j = 0; j < dimensions; j++)
+			chunks[i][j].animals.clear();
+
+	 for (const auto& animal : animals) {
+        unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
+		chunks[cx][cy].animals.push_back(animal.get());
+	}
+
 	if (KEEP_STATS) update_stats();
 }
 
@@ -127,6 +140,9 @@ void World::draw(SDL_Renderer* renderer)
 	float width = 420/dimensions;
 	float height = 420/dimensions;
 
+	Animal* animal = animals.front().get();
+    std::vector<Chunk*> viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->look_dir);
+
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -136,11 +152,11 @@ void World::draw(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
-	    /*
-	    if (chunks[i][j].animals.size() > 0)
+	    auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
+    	if (it != viewed.end())
 	    	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-		else*/ if (chunks[i][j].type == ChunkTypes::SEA)
+	    else if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
 		else if (chunks[i][j].type == ChunkTypes::GRASS)
@@ -209,4 +225,55 @@ void World::render_stats(SDL_Renderer* renderer)
 	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
 	for (int i = 64; i < squirrel_population.size(); i+=squirrel_population.size()/64)
 		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, squirrel_population[i-64]*H/max_y, i*x_section_size, squirrel_population[i]*H/max_y);
+}
+
+vec2d World::pos2chunk(vec2d pos) {
+	return vec2d(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
+}
+
+std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir)
+{
+	std::vector<Chunk*> viewed;
+	vec2d origin = pos2chunk(pos);
+
+	vec2d vt1 = origin;
+	vec2d vt2 = origin + (dir.norm().rotate(-fov*.5) * distance*2);
+	vec2d vt3 = origin + (dir.norm().rotate(fov*.5) * distance*2);
+
+	// Barycentric Algorithm
+	int minX = vt1.x;
+	if (vt2.x < minX) minX = vt2.x;
+	if (vt3.x < minX) minX = vt3.x;
+
+	int minY = vt1.y;
+	if (vt2.y < minY) minY = vt2.y;
+	if (vt3.y < minY) minY = vt3.y;
+
+	int maxX = vt1.y;
+	if (vt2.x > maxX) maxX = vt2.x;
+	if (vt3.x > maxX) maxX = vt3.x;
+
+	int maxY = vt1.y;
+	if (vt2.y > maxY) maxY = vt2.y;
+	if (vt3.y > maxY) maxY = vt3.y;
+
+	vec2d vs1(vt2.x - vt1.x, vt2.y - vt1.y);
+	vec2d vs2(vt3.x - vt1.x, vt3.y - vt1.y);
+
+	for (int x = minX; x <= maxX; x++) {
+		for (int y = minY; y <= maxY; y++)
+		{
+			vec2d q(x - vt1.x, y - vt1.y);
+
+			float s = (float)crossProduct(q, vs2) / crossProduct(vs1, vs2);
+			float t = (float)crossProduct(vs1, q) / crossProduct(vs1, vs2);
+
+			vec2d dist = origin - vec2d(x, y);
+
+			if ((s >= 0) && (t >= 0) && (s + t <= 1) && dist.get_length() < distance)
+				viewed.push_back(&chunks[x][y]);
+	  	}
+	}
+
+	return viewed;
 }

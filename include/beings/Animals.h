@@ -7,6 +7,8 @@
 
 enum AnimalState { DEFAULT, HAD_CHILD, DEAD };
 
+struct Chunk;
+
 struct Animal
 {
 	float max_speed = 1;
@@ -27,8 +29,8 @@ struct Animal
 	float health = max_health;
 	float strength = 50;
 
-	float see_distance = 10; // How far can be seen in front (meters)
-	float fov = 10; // Field of view in degrees
+	float see_distance = 20; // How far can be seen in front (meters)
+	float fov = 90; // Field of view in degrees
 	vec2d look_dir; // direction being looked at
 
 	bool is_male = true;

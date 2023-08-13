@@ -151,3 +151,7 @@ int SDL_RenderFillAlmond(SDL_Renderer* renderer, int x, int y, int y0, int y1, i
 
     return status;
 }
+
+float crossProduct(vec2d v1, vec2d v2) {
+    return (v1.x*v2.y) - (v1.y*v2.x);
+}

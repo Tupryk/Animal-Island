@@ -17,7 +17,7 @@ class World
     static const unsigned int dimensions = 100;
     static const unsigned int chunk_size = 64;
 	Chunk chunks[dimensions][dimensions];
-	
+
 	std::list<std::shared_ptr<Animal>> animals;
 
 	// Statictics
@@ -26,6 +26,8 @@ class World
 
 	void update_stats();
 	void render_stats(SDL_Renderer* renderer);
+	vec2d pos2chunk(vec2d pos);
+	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
 
 public:
 	bool display_stats = false;

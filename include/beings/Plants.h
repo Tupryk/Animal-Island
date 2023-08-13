@@ -12,6 +12,9 @@ class Tree
 	int max_health = 100;
 	int health = max_health;
 
+	// unsigned int capacity = 5; // How many animals can hop on (maybe make it relative to size and weight of animals in the future)
+	// unsigned int current_load = 0;
+
 	std::vector<Tree> drop_seeds();
 
 public:

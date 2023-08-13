@@ -46,11 +46,19 @@ struct vec2d
         float length = get_length();
         return vec2d(x/length, y/length);
     }
+
+    vec2d rotate(float degrees) {
+        float radians = degrees * M_PI / 180.0f;
+        return vec2d(x * cos(radians) - y * sin(radians),
+                     x * sin(radians) + y * cos(radians));
+    }
 };
 
 double lerp(double a, double b, double t);
 double grad(int hash, double x);
 double perlinNoise1D(double x, int seed);
+
+float crossProduct(vec2d v1, vec2d v2);
 
 int SDL_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int radius);
 int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius);

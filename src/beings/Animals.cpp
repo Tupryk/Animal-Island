@@ -13,6 +13,7 @@ AnimalState Animal::update(Chunk* neighbors[], std::vector<Animal*> animals) {
 Cat::Cat(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
+	look_dir = vec2d(1, 0);
 }
 
 AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
@@ -99,6 +100,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
 Squirrel::Squirrel(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
+	look_dir = vec2d(1, 0);
 }
 
 AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
