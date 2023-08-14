@@ -10,7 +10,8 @@
 #include "terrain/Chunks.h"
 #include "beings/Animals.h"
 
-#define KEEP_STATS 1
+#define KEEP_STATS 0
+#define DEBUG 0
 
 class World
 {

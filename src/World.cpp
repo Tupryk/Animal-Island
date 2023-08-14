@@ -58,16 +58,16 @@ World::World()
 
 		chunks[i][j].neighbors[4] = &chunks[i][j];
 
-		if (i != dimensions-1) chunks[i][j].neighbors[4] = &chunks[i+1][j];
+		if (i != dimensions-1) chunks[i][j].neighbors[5] = &chunks[i+1][j];
 		else chunks[i][j].neighbors[5] = NULL;
 
-		if (i != 0 && j != dimensions-1) chunks[i][j].neighbors[5] = &chunks[i-1][j+1];
+		if (i != 0 && j != dimensions-1) chunks[i][j].neighbors[6] = &chunks[i-1][j+1];
 		else chunks[i][j].neighbors[6] = NULL;
 
-		if (j != dimensions-1) chunks[i][j].neighbors[6] = &chunks[i][j+1];
+		if (j != dimensions-1) chunks[i][j].neighbors[7] = &chunks[i][j+1];
 		else chunks[i][j].neighbors[7] = NULL;
 
-		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbors[7] = &chunks[i+1][j+1];
+		if (i != dimensions-1 && j != dimensions-1) chunks[i][j].neighbors[8] = &chunks[i+1][j+1];
 		else chunks[i][j].neighbors[8] = NULL;
 	}}
 
@@ -85,43 +85,62 @@ World::World()
 			if (num == 0) {
 				std::shared_ptr<Cat> cat = std::make_shared<Cat>(vec2d(pos_x, pos_y));
     			animals.push_back(cat);
-    		} else if (num < 4) {
+    		} else if (num < 7) {
     			std::shared_ptr<Squirrel> squirrel = std::make_shared<Squirrel>(vec2d(pos_x, pos_y));
     			animals.push_back(squirrel);
     		}}}}
 }
 
+std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
+    if (std::dynamic_pointer_cast<Cat>(animal)) {
+        return std::make_shared<Cat>(*std::dynamic_pointer_cast<Cat>(animal));
+    } else if (std::dynamic_pointer_cast<Squirrel>(animal)) {
+        return std::make_shared<Squirrel>(*std::dynamic_pointer_cast<Squirrel>(animal));
+    } else {
+        return std::make_shared<Animal>(*animal);
+    }
+}
+
 void World::update()
 {
-	for (int i = 0; i < dimensions; i++)
-		for (int j = 0; j < dimensions; j++)
-			chunks[i][j].update();
-
-	std::vector<Animal*> animals_s;
+	std::list<std::shared_ptr<Animal>> updated_animals;
    	
-    for (auto anim = animals.begin(); anim != animals.end();) {
-        unsigned int cx = (*anim)->pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = (*anim)->pos.y / static_cast<float>(chunk_size);
+    for (const auto& animal : animals)
+    {
+    	std::shared_ptr<Animal> anim_copy = createAnimal(animal);
 
+        unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
+
+		/*
 		std::vector<Animal*> animals_viewed;
-    	std::vector<Chunk*> viewed = get_chunks_viewed((*anim)->fov, (*anim)->see_distance, (*anim)->pos, (*anim)->look_dir);
-    	for (auto chunk : viewed)
+    	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
+    	for (auto chunk : chunks_viewed) {
+    		std::cout << "Joining" << std::endl;
     		animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+    		std::cout << "Joined" << std::endl;
+    	}
+    	*/
+		
+		AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals);
 
-		AnimalState status = (*anim)->update(chunks[cx][cy].neighbors, animals_viewed);
-
-		if (status == AnimalState::DEAD) {
-			anim = animals.erase(anim);
+		if (status == AnimalState::DEAD)
 			continue;
-        }
         else if (status == AnimalState::HAD_CHILD) {
-        	if (std::dynamic_pointer_cast<Squirrel>(*anim)) {
-            	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>((*anim)->pos);
+        	if (std::dynamic_pointer_cast<Squirrel>(anim_copy)) {
+            	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>(anim_copy->pos);
     			animals.push_back(child);
         	}
         }
-        ++anim;
+        // Temporary code to avoid animals from going to the sea
+        unsigned int ncx = anim_copy->pos.x / static_cast<float>(chunk_size);
+		unsigned int ncy = anim_copy->pos.y / static_cast<float>(chunk_size);
+        if (chunks[ncx][ncy].type == ChunkTypes::SEA) anim_copy->pos = vec2d(cx*chunk_size, cy*chunk_size);
+
+        updated_animals.push_back(anim_copy);
     }
+
+    animals = std::move(updated_animals);
 
     for (int i = 0; i < dimensions; i++)
 		for (int j = 0; j < dimensions; j++)
@@ -133,7 +152,9 @@ void World::update()
 		chunks[cx][cy].animals.push_back(animal.get());
 	}
 
-	if (KEEP_STATS) update_stats();
+	#if KEEP_STATS
+		update_stats();
+	#endif
 }
 
 void World::draw(SDL_Renderer* renderer)
@@ -145,6 +166,11 @@ void World::draw(SDL_Renderer* renderer)
 	float width = 420/dimensions;
 	float height = 420/dimensions;
 
+	#if DEBUG
+		std::shared_ptr<Animal> animal = animals.front();
+		std::vector<Chunk*> viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
+	#endif
+
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -154,6 +180,13 @@ void World::draw(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
+    	#if DEBUG
+    		auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
+    		if (it != viewed.end())
+    			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+	    else
+	    #endif
 	    if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
@@ -271,6 +304,14 @@ std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d po
 			if ((s >= 0) && (t >= 0) && (s + t <= 1) && dist.get_length() < distance)
 				viewed.push_back(&chunks[x][y]);
 	  	}
+	}
+
+	// Needs to be optimized (Maybe push back trinagle pos and remove this).
+	for (int i = 0; i < 9; i++) {
+	    Chunk* neighbor = chunks[static_cast<int>(origin.x)][static_cast<int>(origin.y)].neighbors[i];
+	    auto it = std::find(viewed.begin(), viewed.end(), neighbor);
+	    if (neighbor != NULL && it != viewed.end())
+	        viewed.push_back(neighbor);
 	}
 
 	return viewed;

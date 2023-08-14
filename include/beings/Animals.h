@@ -32,8 +32,8 @@ struct Animal
 	float health = max_health;
 	float strength = 50;
 
-	float see_distance = 5; // How far can be seen in front (meters)
-	float fov = 90; // Field of view in degrees
+	float see_distance = 10; // How far can be seen in front (meters)
+	float fov = 120; // Field of view in degrees
 	vec2d look_dir; // direction being looked at
 
 	bool is_male = true;
@@ -54,7 +54,7 @@ struct Animal
 	float getHealth();
 	void hurt(float damage);
 	void updade_vel();
-	virtual AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
+	virtual AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
 	virtual ~Animal() = default;
 };
 
@@ -64,14 +64,14 @@ public:
 	bool on_tree = false;
 	Squirrel(vec2d pos);
 	void give_pregnancy();
-	AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
+	AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
 };
 
 class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::vector<Animal*> animals);
+	AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
 };
 
 class Shark : public Animal

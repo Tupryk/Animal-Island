@@ -6,20 +6,19 @@ void Animal::updade_vel()
 	vel = tmp - tmp*friction;
 }
 
-AnimalState Animal::update(Chunk* neighbors[], std::vector<Animal*> animals) {
+AnimalState Animal::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals) {
     return AnimalState::DEFAULT;
 }
 
 Cat::Cat(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
-	look_dir = vec2d(1, 0);
+	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 }
 
-AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
+AnimalState Cat::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
-
 	// Update hunger
 	if (hunger <= 0) health--;
 	else {
@@ -28,31 +27,24 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
 	}
 	if (hunger > max_hunger) hunger = max_hunger;
 
-	// Update hunger
-	if (hunger <= 0) health--;
-	else {
-		if (hunger > max_hunger*.5) health++;
-		hunger--;
+	std::vector<Squirrel*> candidates;
+	if (animals.size() > 0)
+	{
+		for (const auto& animal : animals)
+			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(animal.get()))
+				if (squirrel->getHealth() > 0)
+					candidates.push_back(squirrel);
 	}
-	if (hunger > max_hunger) hunger = max_hunger;
-	/*
-	if (squirrels.size() > 0 && hunger < max_hunger*.75) {
+
+	if (candidates.size() > 0 && hunger < max_hunger*.75) {
 		// Chase prey
-		Squirrel* closest_squirrel;
-		unsigned int start_index = 0;
-		while(start_index < squirrels.size()) {
-			if (squirrels[start_index]->getHealth() > 0 && !squirrels[start_index]->on_tree) {
-				closest_squirrel = squirrels[start_index];
-				break;
-			}
-			start_index++;
-		}
-		for (int i = start_index+1; i < squirrels.size(); i++) {
+		Squirrel* closest_squirrel = candidates[0];
+		for (int i = 1; i < candidates.size(); i++) {
 			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-			vec2d squirrel_direction_new(squirrels[i]->pos.x - pos.x, squirrels[i]->pos.y - pos.y);
+			vec2d squirrel_direction_new(candidates[i]->pos.x - pos.x, candidates[i]->pos.y - pos.y);
 
-			if (squirrel_direction.get_length() > squirrel_direction_new.get_length() && squirrels[i]->getHealth() > 0 && !squirrels[i]->on_tree)
-				closest_squirrel = squirrels[i];
+			if (squirrel_direction.get_length() > squirrel_direction_new.get_length())
+				closest_squirrel = candidates[i];
 		}
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 		acc = squirrel_direction.norm() * max_speed;
@@ -63,7 +55,7 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
 		}
 		cycle_counter = 0;
 	}
-	else {*/
+	else {
 		// Update random walking
 		cycle_counter++;
 		if (cycle_counter >= cycle_limit) {
@@ -71,39 +63,20 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<Animal*> animals)
 			cycle_limit = 64+rand()%256;
 			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
-	//}
-	
-	// Don't jump into water
-	if (acc.x > 0 && (
-		neighbors[4]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) acc.x *= -1;
-	if (acc.x < 0 && (
-		neighbors[0]->type == ChunkTypes::SAND ||
-		neighbors[3]->type == ChunkTypes::SAND ||
-		neighbors[5]->type == ChunkTypes::SAND)) acc.x *= -1;
-	if (acc.y > 0 && (
-		neighbors[5]->type == ChunkTypes::SAND ||
-		neighbors[6]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) acc.y *= -1;
-	if (acc.y < 0 && (
-		neighbors[0]->type == ChunkTypes::SAND ||
-		neighbors[1]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND)) acc.y *= -1;
+	}
 	pos = pos + vel + ( acc * .5 );
 
 	if (health > max_health) health = max_health;
-
 	return AnimalState::DEFAULT;
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {
 	this->pos = pos;
 	is_male = rand()%2 == 0;
-	look_dir = vec2d(1, 0);
+	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);;
 }
 
-AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
+AnimalState Squirrel::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
@@ -111,17 +84,15 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 	if (horny > horny_threshold) horny = horny_threshold;
 
 	std::vector<Squirrel*> candidates;
-	if (animals.size() > 0 && this->pregnant < 0)
+	if (!animals.empty() && this->pregnant < 0)
 	{
-		for (auto anim : animals) {
-			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(anim)) {
+		for (const auto& animal : animals)
+			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(animal.get()))
 				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0)
 					candidates.push_back(squirrel);
-			}
-		}
 	}
 
-	if (candidates.size() > 0 && horny >= horny_threshold) {
+	if (!candidates.empty() && horny >= horny_threshold) {
 		Squirrel* closest_squirrel = candidates[0];
 		for (int i = 1; i < candidates.size(); i++) {
 			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
@@ -147,23 +118,6 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
 	}
-	
-	if (acc.x > 0 && (
-		neighbors[4]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) acc.x *= -1;
-	if (acc.x < 0 && (
-		neighbors[0]->type == ChunkTypes::SAND ||
-		neighbors[3]->type == ChunkTypes::SAND ||
-		neighbors[5]->type == ChunkTypes::SAND)) acc.x *= -1;
-	if (acc.y > 0 && (
-		neighbors[5]->type == ChunkTypes::SAND ||
-		neighbors[6]->type == ChunkTypes::SAND ||
-		neighbors[7]->type == ChunkTypes::SAND)) acc.y *= -1;
-	if (acc.y < 0 && (
-		neighbors[0]->type == ChunkTypes::SAND ||
-		neighbors[1]->type == ChunkTypes::SAND ||
-		neighbors[2]->type == ChunkTypes::SAND)) acc.y *= -1;
 	pos = pos + vel + ( acc * .5 );
 
 	if (pregnant >= 0) pregnant++;
@@ -171,6 +125,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 		pregnant = -1;
 		return AnimalState::HAD_CHILD;
 	}
+	if (health > max_health) health = max_health;
 	return AnimalState::DEFAULT;
 }
 
