@@ -1,6 +1,9 @@
 #pragma once
 
+#include <list>
 #include <vector>
+#include <memory>
+#include <algorithm>
 
 #include "utils.h"
 #include "terrain/Chunks.h"
@@ -29,7 +32,7 @@ struct Animal
 	float health = max_health;
 	float strength = 50;
 
-	float see_distance = 20; // How far can be seen in front (meters)
+	float see_distance = 5; // How far can be seen in front (meters)
 	float fov = 90; // Field of view in degrees
 	vec2d look_dir; // direction being looked at
 
@@ -45,6 +48,8 @@ struct Animal
 	float max_energy_discout = .1; // Multiply by age and subtract result from max energy.
 	float min_energy = 10;
 	float energy = max_energy;
+
+	float reach = 10;
 
 	float getHealth();
 	void hurt(float damage);

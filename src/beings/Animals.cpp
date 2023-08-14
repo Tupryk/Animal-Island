@@ -110,30 +110,30 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 	horny++;
 	if (horny > horny_threshold) horny = horny_threshold;
 
-	/*
 	std::vector<Squirrel*> candidates;
-	if (squirrels.size() > 0 && this->pregnant < 0)
+	if (animals.size() > 0 && this->pregnant < 0)
 	{
-		for (auto squirrel : squirrels) {
-			if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male)
-				candidates.push_back(squirrel);
+		for (auto anim : animals) {
+			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(anim)) {
+				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0)
+					candidates.push_back(squirrel);
+			}
 		}
 	}
 
 	if (candidates.size() > 0 && horny >= horny_threshold) {
 		Squirrel* closest_squirrel = candidates[0];
-		// Chase prey
 		for (int i = 1; i < candidates.size(); i++) {
 			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 			vec2d squirrel_direction_new(candidates[i]->pos.x - pos.x, candidates[i]->pos.y - pos.y);
 
-			if (squirrel_direction.get_length() > squirrel_direction_new.get_length() && candidates[i]->getHealth() > 0)
+			if (squirrel_direction.get_length() > squirrel_direction_new.get_length())
 				closest_squirrel = candidates[i];
 		}
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 		acc = squirrel_direction.norm() * max_speed;
 
-		if (squirrel_direction.get_length() < 10 && is_male) {
+		if (squirrel_direction.get_length() < reach && is_male) {
 			closest_squirrel->give_pregnancy();
 			horny = 0;
 		}
@@ -147,7 +147,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<Animal*> animals)
 			acc = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 		}
 	}
-	*/
+	
 	if (acc.x > 0 && (
 		neighbors[4]->type == ChunkTypes::SAND ||
 		neighbors[2]->type == ChunkTypes::SAND ||

@@ -103,7 +103,12 @@ void World::update()
         unsigned int cx = (*anim)->pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = (*anim)->pos.y / static_cast<float>(chunk_size);
 
-		AnimalState status = (*anim)->update(chunks[cx][cy].neighbors, animals_s);
+		std::vector<Animal*> animals_viewed;
+    	std::vector<Chunk*> viewed = get_chunks_viewed((*anim)->fov, (*anim)->see_distance, (*anim)->pos, (*anim)->look_dir);
+    	for (auto chunk : viewed)
+    		animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+
+		AnimalState status = (*anim)->update(chunks[cx][cy].neighbors, animals_viewed);
 
 		if (status == AnimalState::DEAD) {
 			anim = animals.erase(anim);
@@ -140,9 +145,6 @@ void World::draw(SDL_Renderer* renderer)
 	float width = 420/dimensions;
 	float height = 420/dimensions;
 
-	Animal* animal = animals.front().get();
-    std::vector<Chunk*> viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->look_dir);
-
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -152,11 +154,7 @@ void World::draw(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
-	    auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
-    	if (it != viewed.end())
-	    	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-
-	    else if (chunks[i][j].type == ChunkTypes::SEA)
+	    if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
 		else if (chunks[i][j].type == ChunkTypes::GRASS)
