@@ -158,14 +158,16 @@ int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d
 
     const unsigned int s_count = 6;
     float tmp = (inter0-inter1).get_length();
+    vec2d normed = (inter0-inter1).norm();
     const float s_len = tmp/(s_count+1);
     for (int i = 1; i < s_count+1; i++)
     {
         float x = s_len*i - tmp*.5;
+        vec2d x_vec = normed*x;
         float y_up = -(sqrt(radius0*radius0-x*x)+origin0.y);
         float y_down = sqrt(radius1*radius1-x*x)-origin1.y;
-        vec2d up(x, y_up);
-        vec2d down(x, y_down);
+        vec2d up = x_vec + normed.rotate(90)*y_up;
+        vec2d down = x_vec + normed.rotate(90)*y_down;
 
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillCircle(renderer, up.x+pos.x, up.y+pos.y, 5);

@@ -137,5 +137,5 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 
 	vec2d horigin = head.segs[0].end + vec2d(280, pos.y);
 	SDL_RenderFillAlmond(renderer,
-		horigin, vec2d(0, -50), vec2d(0, 50), 80, 80);
+		horigin, vec2d(10, -50), vec2d(-10, 50), 80, 80);
 }
