@@ -125,9 +125,7 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 	    	seg.end.x + 300,
 	    	seg.end.y + pos.y,
 	    	10, 0, 0, 0, 255);
-	}
-	//SDL_RenderFillPolygon(renderer, filledVertices, 5);
-    
+	}    
     unsigned int width = 200;
     unsigned int height = 50;
     SDL_Rect rect;
@@ -136,4 +134,8 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 	rect.w = width;
 	rect.h = height;
 	SDL_RenderFillRect(renderer, &rect);
+
+	vec2d horigin = head.segs[0].end + vec2d(280, pos.y);
+	SDL_RenderFillAlmond(renderer,
+		horigin, vec2d(0, -50), vec2d(0, 50), 80, 80);
 }

@@ -133,23 +133,70 @@ int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
-int SDL_RenderFillAlmond(SDL_Renderer* renderer, int x, int y, int y0, int y1, int radius0, int radius1)
+int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1)
 {
-    int status = 0;
+    // Calculate circle intersections
+    float dx = origin1.x - origin0.x;
+    float dy = origin1.y - origin0.y;
+    float d = sqrt(dx * dx + dy * dy);
 
-    for (int yOffset = y0; yOffset <= y1; ++yOffset) {
-        // Calculate the corresponding x radius for each y offset
-        int xRadius = radius0 + (radius1 - radius0) * (yOffset - y0) / (y1 - y0);
+    // Circles fo not intersect
+    if (d > radius0 + radius1 || d < abs(radius0 - radius1))
+        return -1;
 
-        status += SDL_RenderDrawLine(renderer, x - xRadius, y + yOffset, x + xRadius, y + yOffset);
+    float a = (radius0 * radius0 - radius1 * radius1 + d * d) / (2 * d);
+    float h = sqrt(radius0 * radius0 - a * a);
+    
+    float intersectionX = origin0.x + a * (origin1.x - origin0.x) / d;
+    float intersectionY = origin0.y + a * (origin1.y - origin0.y) / d;
+    
+    vec2d inter0(intersectionX + h * (origin1.y - origin0.y) / d, intersectionY - h * (origin1.x - origin0.x) / d);
+    vec2d inter1(intersectionX - h * (origin1.y - origin0.y) / d, intersectionY + h * (origin1.x - origin0.x) / d);
 
-        if (status < 0) {
-            status = -1;
-            break;
-        }
+    //vec2d up = ((origin0-origin1).norm()*radius1)+origin1;
+    //vec2d down = ((origin1-origin0).norm()*radius0)+origin0;
+
+    const unsigned int s_count = 6;
+    float tmp = (inter0-inter1).get_length();
+    const float s_len = tmp/(s_count+1);
+    for (int i = 1; i < s_count+1; i++)
+    {
+        float x = s_len*i - tmp*.5;
+        float y_up = -(sqrt(radius0*radius0-x*x)+origin0.y);
+        float y_down = sqrt(radius1*radius1-x*x)-origin1.y;
+        vec2d up(x, y_up);
+        vec2d down(x, y_down);
+
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderFillCircle(renderer, up.x+pos.x, up.y+pos.y, 5);
+        SDL_RenderFillCircle(renderer, down.x+pos.x, down.y+pos.y, 5);
     }
 
-    return status;
+    origin0 = origin0 + pos;
+    origin1 = origin1 + pos;
+    //up = up + pos;
+    //down = down + pos;
+    inter0 = inter0 + pos;
+    inter1 = inter1 + pos;
+
+    // Draw polygon
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
+    SDL_RenderFillCircle(renderer, pos.x, pos.y, 7);
+
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 128);
+    SDL_RenderFillCircle(renderer, origin0.x, origin0.y, 7);
+    SDL_RenderFillCircle(renderer, origin1.x, origin1.y, 7);
+
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillCircle(renderer, inter0.x, inter0.y, 5);
+    SDL_RenderFillCircle(renderer, inter1.x, inter1.y, 5);
+
+    //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    //SDL_RenderFillCircle(renderer, up.x, up.y, 5);
+    //SDL_RenderFillCircle(renderer, down.x, down.y, 5);
+
+    //SDL_RenderFillPolygon(renderer, filledVertices, 5);
+    return 0;
 }
 
 float crossProduct(vec2d v1, vec2d v2) {
