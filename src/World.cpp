@@ -112,8 +112,9 @@ void World::update()
         unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
 
+		// Causes errors
 		/*
-		std::vector<Animal*> animals_viewed;
+		std::list<std::shared_ptr<Animal>> animals_viewed;
     	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
     	for (auto chunk : chunks_viewed) {
     		std::cout << "Joining" << std::endl;
@@ -122,7 +123,9 @@ void World::update()
     	}
     	*/
 		
+		//std::cout << "updating" << std::endl;
 		AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals);
+		//std::cout << "updated" << std::endl;
 
 		if (status == AnimalState::DEAD)
 			continue;
@@ -141,15 +144,15 @@ void World::update()
     }
 
     animals = std::move(updated_animals);
-
+    
     for (int i = 0; i < dimensions; i++)
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].animals.clear();
 
-	 for (const auto& animal : animals) {
+	 for (auto animal : animals) {
         unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
 		unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
-		chunks[cx][cy].animals.push_back(animal.get());
+		chunks[cx][cy].animals.push_back(animal);
 	}
 
 	#if KEEP_STATS

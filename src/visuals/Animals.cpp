@@ -21,8 +21,9 @@ void Segment::update() {
     end = origin + d;
 }
 
-Limb::Limb(vec2d* base, unsigned int seg_count, float seg_len) : seg_count(seg_count) {
+Limb::Limb(vec2d* base, unsigned int seg_count, float total_len) : seg_count(seg_count) {
 	this->base = base;
+	float seg_len = total_len/seg_count;
     for (int i = 0; i < seg_count; i++) {
    		Segment seg(0, 0, seg_len, 0);
         segs.push_back(seg);
@@ -47,41 +48,92 @@ void Limb::update(vec2d follows)
 AnimalVisual::AnimalVisual() :
 	pos(300, 200),
 	limbs{
-		Limb(&body_joints[0], 2, 70),
-		Limb(&body_joints[1], 2, 70),
-		Limb(&body_joints[2], 2, 70),
-		Limb(&body_joints[3], 2, 70)
-}{
+		Limb(&body_joints[0], 3, 120),
+		Limb(&body_joints[1], 3, 120),
+		Limb(&body_joints[2], 3, 120),
+		Limb(&body_joints[3], 3, 120)
+	},
+	head(&head_origin, 2, 50)
+{
+	head_origin = vec2d(-100, 0);
     body_joints[0] = vec2d(-100, 40);
     body_joints[1] = vec2d(-80, 30);
     body_joints[2] = vec2d(100, 40);
     body_joints[3] = vec2d(120, 30);
+
+    for (int i = 0; i < limb_count; i++) {
+    	if (i % 2 == 0)
+    		leg_target[i] = vec2d(body_joints[i].x-(target_limit), 0);
+    	else
+    		leg_target[i] = vec2d(body_joints[i].x+(target_limit), 0);
+    }
 }
 
 
 void AnimalVisual::update()
 {
-	leg_target += speed;
-	if (leg_target >= 110 || leg_target <= -100) speed *= -1;
-
-	visual_coors.x = leg_target;
-	visual_coors.y = 100;
+	float elevation = sin(pos.x*.05)*10;
+	pos.x -= speed;
+	pos.y = elevation + 200;
+	head.update(head_origin + vec2d(-50, -elevation));
 	for (int i = 0; i < limb_count; i++)
-		limbs[i].update({visual_coors.x, visual_coors.y});
+	{
+		leg_target[i].y = 170-elevation;
+		if (target_reseting[i]) {
+			leg_target[i].x -= speed;
+			if (leg_target[i].x <= body_joints[i].x-target_limit) {
+				leg_target[i].x = body_joints[i].x-target_limit;
+				target_reseting[i] = false;
+			}
+			leg_target[i].y -= sin(M_PI*(leg_target[i].x-body_joints[i].x+target_limit)/(target_limit*2))*40;
+		} else {
+			leg_target[i].x += speed;
+			if (leg_target[i].x - body_joints[i].x > target_limit) target_reseting[i] = true;
+		}
+		limbs[i].update(leg_target[i]);
+	}
 }
 
 void AnimalVisual::draw(SDL_Renderer* renderer)
 {
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	for (int i = 0; i < limb_count; i++) {
-		for (Segment seg : limbs[i].segs) {
-		    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-		    SDL_RenderDrawLine(renderer,
-		    	seg.origin.x + pos.x,
-		    	seg.origin.y + pos.y,
-		    	seg.end.x + pos.x,
-		    	seg.end.y + pos.y);
+		for (int j = 0; j < limbs[i].segs.size(); j++) {
+			Segment seg = limbs[i].segs[j];
+			if (j == 0) {
+				vec2d tmp = (seg.end - seg.origin).rotate(90);
+				vec2d rec = tmp.norm() * (leg_width*.5);
+				vec2d p0 = seg.origin + rec;
+				vec2d p1 = seg.origin - rec;
+				filledTrigonRGBA(renderer,
+					p0.x + 300, p0.y + pos.y, p1.x + 300, p1.y + pos.y,
+					seg.end.x + 300, seg.end.y + pos.y,
+					0, 0, 0, 255);
+			} else {
+			    thickLineRGBA(renderer,
+			    	seg.origin.x + 300, seg.origin.y + pos.y,
+			    	seg.end.x + 300, seg.end.y + pos.y,
+			    	leg_width, 0, 0, 0, 255);
+    			SDL_RenderFillCircle(renderer, seg.end.x + 300, seg.end.y + pos.y, leg_width*.5-1);
+			}
 		}
 	}
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderFillCircle(renderer, visual_coors.x + pos.x, visual_coors.y + pos.y, 10);
+	for (Segment seg : head.segs) {
+	    thickLineRGBA(renderer,
+	    	seg.origin.x + 300,
+	    	seg.origin.y + pos.y,
+	    	seg.end.x + 300,
+	    	seg.end.y + pos.y,
+	    	10, 0, 0, 0, 255);
+	}
+	//SDL_RenderFillPolygon(renderer, filledVertices, 5);
+    
+    unsigned int width = 200;
+    unsigned int height = 50;
+    SDL_Rect rect;
+	rect.x = 300-width*.5;
+	rect.y = pos.y-height*.5;
+	rect.w = width;
+	rect.h = height;
+	SDL_RenderFillRect(renderer, &rect);
 }

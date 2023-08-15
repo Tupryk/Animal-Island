@@ -19,6 +19,7 @@ class World
     static const unsigned int chunk_size = 64;
 	Chunk chunks[dimensions][dimensions];
 
+	// Shared ptr for different animal types
 	std::list<std::shared_ptr<Animal>> animals;
 
 	// Statictics
