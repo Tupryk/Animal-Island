@@ -133,8 +133,13 @@ int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
-int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1)
+int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b)
 {
+    unsigned int vert_counter = 0;
+    static const unsigned int total_verts = 14;
+    Sint16 vertsx[total_verts];
+    Sint16 vertsy[total_verts];
+
     // Calculate circle intersections
     float dx = origin1.x - origin0.x;
     float dy = origin1.y - origin0.y;
@@ -153,8 +158,12 @@ int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d
     vec2d inter0(intersectionX + h * (origin1.y - origin0.y) / d, intersectionY - h * (origin1.x - origin0.x) / d);
     vec2d inter1(intersectionX - h * (origin1.y - origin0.y) / d, intersectionY + h * (origin1.x - origin0.x) / d);
 
-    //vec2d up = ((origin0-origin1).norm()*radius1)+origin1;
-    //vec2d down = ((origin1-origin0).norm()*radius0)+origin0;
+    inter0 = inter0 + pos;
+    inter1 = inter1 + pos;
+
+    vertsx[vert_counter] = static_cast<int>(inter1.x);
+    vertsy[vert_counter] = static_cast<int>(inter1.y);
+    vert_counter++;
 
     const unsigned int s_count = 6;
     float tmp = (inter0-inter1).get_length();
@@ -164,40 +173,117 @@ int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d
     {
         float x = s_len*i - tmp*.5;
         vec2d x_vec = normed*x;
-        float y_up = -(sqrt(radius0*radius0-x*x)+origin0.y);
-        float y_down = sqrt(radius1*radius1-x*x)-origin1.y;
+        float y_up = -(sqrt(radius1*radius1-x*x)-origin1.y);
         vec2d up = x_vec + normed.rotate(90)*y_up;
-        vec2d down = x_vec + normed.rotate(90)*y_down;
+        up = up + pos;
 
-        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-        SDL_RenderFillCircle(renderer, up.x+pos.x, up.y+pos.y, 5);
-        SDL_RenderFillCircle(renderer, down.x+pos.x, down.y+pos.y, 5);
+        vertsx[vert_counter] = static_cast<int>(up.x);
+        vertsy[vert_counter] = static_cast<int>(up.y);
+        vert_counter++;
+    }
+    vertsx[vert_counter] = static_cast<int>(inter0.x);
+    vertsy[vert_counter] = static_cast<int>(inter0.y);
+    vert_counter++;
+
+    for (int i = s_count; i >= 1; i--)
+    {
+        float x = s_len*i - tmp*.5;
+        vec2d x_vec = normed*x;
+        float y_down = sqrt(radius0*radius0-x*x)+origin0.y;
+        vec2d down = x_vec + normed.rotate(90)*y_down;
+        down = down + pos;
+
+        vertsx[vert_counter] = static_cast<int>(down.x);
+        vertsy[vert_counter] = static_cast<int>(down.y);
+        vert_counter++;
     }
 
-    origin0 = origin0 + pos;
-    origin1 = origin1 + pos;
-    //up = up + pos;
-    //down = down + pos;
+    // draw
+    filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
+    return 0;
+}
+
+int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b)
+{
+    unsigned int vert_counter = 0;
+    static const unsigned int total_verts = 14;
+    Sint16 vertsx[total_verts];
+    Sint16 vertsy[total_verts];
+
+    // Calculate circle intersections
+    float dx = origin1.x - origin0.x;
+    float dy = origin1.y - origin0.y;
+    float d = sqrt(dx * dx + dy * dy);
+
+    // Circles fo not intersect
+    if (d > radius0 + radius1 || d < abs(radius0 - radius1))
+        return -1;
+
+    float a = (radius0 * radius0 - radius1 * radius1 + d * d) / (2 * d);
+    float h = sqrt(radius0 * radius0 - a * a);
+    
+    float intersectionX = origin0.x + a * (origin1.x - origin0.x) / d;
+    float intersectionY = origin0.y + a * (origin1.y - origin0.y) / d;
+    
+    vec2d inter0(intersectionX + h * (origin1.y - origin0.y) / d, intersectionY - h * (origin1.x - origin0.x) / d);
+    vec2d inter1(intersectionX - h * (origin1.y - origin0.y) / d, intersectionY + h * (origin1.x - origin0.x) / d);
+
     inter0 = inter0 + pos;
     inter1 = inter1 + pos;
 
-    // Draw polygon
-    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 128);
-    SDL_RenderFillCircle(renderer, pos.x, pos.y, 7);
+    vertsx[vert_counter] = static_cast<int>(inter1.x);
+    vertsy[vert_counter] = static_cast<int>(inter1.y);
+    vert_counter++;
 
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 128);
-    SDL_RenderFillCircle(renderer, origin0.x, origin0.y, 7);
-    SDL_RenderFillCircle(renderer, origin1.x, origin1.y, 7);
+    const unsigned int s_count = 6;
+    float tmp = (inter0-inter1).get_length();
+    vec2d normed = (inter0-inter1).norm();
+    const float s_len = tmp/(s_count+1);
+    for (int i = 1; i < s_count+1; i++)
+    {
+        float x = s_len*i - tmp*.5;
+        vec2d x_vec = normed*x;
+        float y_up = -(sqrt(radius1*radius1-x*x)-origin1.y);
+        vec2d up = x_vec + normed.rotate(90)*y_up;
+        up = up + pos;
+
+        vertsx[vert_counter] = static_cast<int>(up.x);
+        vertsy[vert_counter] = static_cast<int>(up.y);
+        vert_counter++;
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+        SDL_RenderFillCircle(renderer, up.x, up.y, 7);
+    }
+    vertsx[vert_counter] = static_cast<int>(inter0.x);
+    vertsy[vert_counter] = static_cast<int>(inter0.y);
+    vert_counter++;
+
+    for (int i = s_count; i >= 1; i--)
+    {
+        float x = s_len*i - tmp*.5;
+        vec2d x_vec = normed*x;
+        float y_down = -(sqrt(radius0*radius0-x*x)-origin0.y);
+        vec2d down = x_vec + normed.rotate(90)*y_down;
+        down = down + pos;
+
+        vertsx[vert_counter] = static_cast<int>(down.x);
+        vertsy[vert_counter] = static_cast<int>(down.y);
+        vert_counter++;
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+        SDL_RenderFillCircle(renderer, down.x, down.y, 7);
+    }
 
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderFillCircle(renderer, inter0.x, inter0.y, 5);
-    SDL_RenderFillCircle(renderer, inter1.x, inter1.y, 5);
+    SDL_RenderFillCircle(renderer, inter0.x, inter0.y, 7);
+    SDL_RenderFillCircle(renderer, inter1.x, inter1.y, 7);
 
-    //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    //SDL_RenderFillCircle(renderer, up.x, up.y, 5);
-    //SDL_RenderFillCircle(renderer, down.x, down.y, 5);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+    SDL_RenderFillCircle(renderer, pos.x, pos.y, 7);
 
-    //SDL_RenderFillPolygon(renderer, filledVertices, 5);
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    SDL_RenderFillCircle(renderer, origin0.x+pos.x, origin0.y+pos.y, 7);
+    SDL_RenderFillCircle(renderer, origin1.x+pos.x, origin1.y+pos.y, 7);
+    // draw
+    //filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
     return 0;
 }
 

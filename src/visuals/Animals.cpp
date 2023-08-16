@@ -118,13 +118,16 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 			}
 		}
 	}
-	for (Segment seg : head.segs) {
+	for (int j = 0; j < head.segs.size(); j++) {
+		Segment seg = head.segs[j];
 	    thickLineRGBA(renderer,
 	    	seg.origin.x + 300,
 	    	seg.origin.y + pos.y,
 	    	seg.end.x + 300,
 	    	seg.end.y + pos.y,
-	    	10, 0, 0, 0, 255);
+	    	30, 0, 0, 0, 255);
+	    if (j != 0)
+	   		SDL_RenderFillCircle(renderer, seg.end.x + 300, seg.end.y + pos.y, 14);
 	}    
     unsigned int width = 200;
     unsigned int height = 50;
@@ -136,6 +139,16 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &rect);
 
 	vec2d horigin = head.segs[0].end + vec2d(280, pos.y);
+
+	SDL_SetRenderDrawColor(renderer, 0, 100, 255, 10);
+	SDL_RenderFillCircle(renderer, horigin.x, -50+horigin.y, 80);
+	SDL_SetRenderDrawColor(renderer, 0, 255, 100, 10);
+	SDL_RenderFillCircle(renderer, horigin.x, 50+horigin.y, 90);
+
 	SDL_RenderFillAlmond(renderer,
-		horigin, vec2d(10, -50), vec2d(-10, 50), 80, 80);
+		horigin, vec2d(0, -50), vec2d(0, 50), 80, 90);
+	//SDL_RenderFillMoon(renderer,
+	//	horigin, vec2d(0, -10), vec2d(0, 70), 60, 120, 255, 255);
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	//SDL_RenderFillCircle(renderer, horigin.x, horigin.y, 20);
 }
