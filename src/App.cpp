@@ -1,17 +1,19 @@
 #include "App.h"
 
-App::App() : world(), av() { srand( time( NULL ) ); }
+App::App() : world(), av(), wv() { srand( time( NULL ) ); }
 
 void App::update()
 {
-	world.update();
+	//world.update();
 	//av.update();
+	wv.update();
 }
 
 void App::draw()
 {
- 	world.draw(renderer);
+ 	//world.draw(renderer);
  	//av.draw(renderer);
+ 	wv.draw(renderer);
 }
 
 void App::run()

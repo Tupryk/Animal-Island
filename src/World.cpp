@@ -181,8 +181,8 @@ void World::draw_world(SDL_Renderer* renderer)
 	unsigned int pcy = player.pos.y / static_cast<float>(chunk_size);
 
 	// Floor
-	for (int i = -3; i <= 0; i++) {
-		for (int j = -2; j <= 0; j++) {
+	for (int i = -.5*(render_width-1); i <= 0; i++) {
+		for (int j = -.5*(render_height-1); j <= 0; j++) {
 			int px = chunk_size-(static_cast<int>(player.pos.x)%chunk_size) + chunk_size*i;
 			int py = chunk_size-(static_cast<int>(player.pos.y)%chunk_size) + chunk_size*j;
 
