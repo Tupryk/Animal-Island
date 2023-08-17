@@ -139,10 +139,19 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 	SDL_RenderFillRect(renderer, &rect);
 
 	vec2d horigin = head.segs[0].end + vec2d(280, pos.y);
+	/*
 	SDL_RenderFillAlmond(renderer,
 		horigin, vec2d(0, -50), vec2d(0, 50), 80, 80);
 	SDL_RenderFillMoon(renderer,
 		horigin, vec2d(0, 25), vec2d(0, 105), 40, 100, 255, 255);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillCircle(renderer, horigin.x, horigin.y, 15);
+	*/
+	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+	SDL_RenderFillCircle(renderer, horigin.x-10, horigin.y-10, 40);
+	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+	SDL_RenderFillCircle(renderer, horigin.x+10, horigin.y-50, 20);
+
+	SDL_RenderFillMoon(renderer,
+		horigin, vec2d(10, -50), vec2d(-10, -10), 20, 40, 255);
 }

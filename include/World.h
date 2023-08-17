@@ -9,6 +9,7 @@
 
 #include "terrain/Chunks.h"
 #include "beings/Animals.h"
+#include "beings/Player.h"
 
 #define KEEP_STATS 0
 #define DEBUG 0
@@ -27,12 +28,16 @@ class World
 	std::vector<unsigned int> cat_population;
 
 	void update_stats();
+	void draw_mini_map(SDL_Renderer* renderer);
+	void draw_world(SDL_Renderer* renderer);
 	void render_stats(SDL_Renderer* renderer);
-	vec2d pos2chunk(vec2d pos);
+	Chunk* pos2chunk(vec2d pos);
 	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
 
 public:
 	bool display_stats = false;
+	bool big_map = false;
+	Player player;
 
 	World();
 	void update();

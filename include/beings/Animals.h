@@ -79,4 +79,3 @@ class Shark : public Animal
 public:
 	Shark(vec2d pos);
 };
-

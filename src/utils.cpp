@@ -236,20 +236,23 @@ int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d o
     vertsy[vert_counter] = static_cast<int>(inter1.y);
     vert_counter++;
 
-    float tmp = (inter0-inter1).get_length();
-    vec2d normed = (inter0-inter1).norm();
-    const float s_len = tmp/(s_count+1);
+    float inter_len = (inter0-inter1).get_length();
+    vec2d normed = (origin0-origin1).norm();
+    vec2d normed_rot = normed.rotate(90);
+    const float s_len = inter_len/(s_count+1);
     for (int i = 1; i < s_count+1; i++)
     {
-        float x = s_len*i - tmp*.5;
-        vec2d x_vec = normed*x;
-        float y_up = -(sqrt(radius1*radius1-x*x)-origin1.y);
-        vec2d up = x_vec + normed.rotate(90)*y_up;
+        float x = s_len*i - inter_len*.5;
+        float y_up = -(sqrt(radius1*radius1-x*x) + origin1.get_length());
+        vec2d up = normed_rot*x + normed*y_up;
         up = up + pos;
 
         vertsx[vert_counter] = static_cast<int>(up.x);
         vertsy[vert_counter] = static_cast<int>(up.y);
         vert_counter++;
+
+        SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
+        SDL_RenderFillCircle(renderer, up.x, up.y, 3);
     }
     vertsx[vert_counter] = static_cast<int>(inter0.x);
     vertsy[vert_counter] = static_cast<int>(inter0.y);
@@ -257,18 +260,23 @@ int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d o
 
     for (int i = s_count; i >= 1; i--)
     {
-        float x = s_len*i - tmp*.5;
-        vec2d x_vec = normed*x;
-        float y_down = -(sqrt(radius0*radius0-x*x)-origin0.y);
-        vec2d down = x_vec + normed.rotate(90)*y_down;
+        float x = s_len*i - inter_len*.5;
+        float y_down = -(sqrt(radius0*radius0-x*x) + origin0.get_length());
+        vec2d down = normed_rot*x + normed*y_down;
         down = down + pos;
 
         vertsx[vert_counter] = static_cast<int>(down.x);
         vertsy[vert_counter] = static_cast<int>(down.y);
         vert_counter++;
+
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
+        SDL_RenderFillCircle(renderer, down.x, down.y, 3);
     }
+    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+    SDL_RenderFillCircle(renderer, inter0.x, inter0.y, 3);
+    SDL_RenderFillCircle(renderer, inter1.x, inter1.y, 3);
     // draw
-    filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
+    //filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
     return 0;
 }
 

@@ -1,6 +1,6 @@
 #include "World.h"
 
-World::World()
+World::World() : player(vec2d(3232, 3232))
 {
 	srand( time( NULL ) );
 
@@ -103,6 +103,7 @@ std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
 
 void World::update()
 {
+	player.update_pos();
 	std::list<std::shared_ptr<Animal>> updated_animals;
    	
     for (const auto& animal : animals)
@@ -165,9 +166,135 @@ void World::draw(SDL_Renderer* renderer)
     if (display_stats) {
     	render_stats(renderer);
     	return; }
+    draw_world(renderer);
+    draw_mini_map(renderer);
+}
 
-	float width = 420/dimensions;
-	float height = 420/dimensions;
+void World::draw_world(SDL_Renderer* renderer)
+{
+	unsigned int render_height = 5; // in chunks
+	unsigned int render_width = 7; // in chunks
+	float ScreenCenterX = 600;
+	float ScreenCenterY = 350;
+
+	unsigned int pcx = player.pos.x / static_cast<float>(chunk_size);
+	unsigned int pcy = player.pos.y / static_cast<float>(chunk_size);
+
+	// Floor
+	for (int i = -3; i <= 0; i++) {
+		for (int j = -2; j <= 0; j++) {
+			int px = chunk_size-(static_cast<int>(player.pos.x)%chunk_size) + chunk_size*i;
+			int py = chunk_size-(static_cast<int>(player.pos.y)%chunk_size) + chunk_size*j;
+
+			float y = -py;
+			float z = 1-(y/(ScreenCenterY*2)+.5);
+			z *= 5;
+			vec2d p0(-px * z, y*z);
+			vec2d p1((chunk_size-px)*z, y*z);
+
+			y = chunk_size-py;
+			z = 1-(y/(ScreenCenterY*2)+.5);
+			z *= 5;
+			vec2d p2((chunk_size-px)*z, y*z);
+			vec2d p3(-px * z, y*z);
+
+			Sint16 vertsx[4] = {
+				static_cast<Sint16>(ScreenCenterX-p0.x),
+				static_cast<Sint16>(ScreenCenterX-p1.x),
+				static_cast<Sint16>(ScreenCenterX-p2.x),
+				static_cast<Sint16>(ScreenCenterX-p3.x)};
+		    Sint16 vertsy[4] = {
+		    	static_cast<Sint16>(ScreenCenterY-p0.y),
+		    	static_cast<Sint16>(ScreenCenterY-p1.y),
+		    	static_cast<Sint16>(ScreenCenterY-p2.y),
+		    	static_cast<Sint16>(ScreenCenterY-p3.y)};
+
+		    if (chunks[pcx+i][pcy+j].type == ChunkTypes::SEA)
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 0, 255, 255);
+
+			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::GRASS)
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 255, 0, 255);
+
+			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::VALLEY)
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 100, 0, 255);
+
+			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::SAND)
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255, 255, 0, 255);
+
+			else filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255, 192, 203, 255);
+
+			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+			SDL_RenderDrawLine(renderer,
+				ScreenCenterX-p0.x, ScreenCenterY-p0.y,
+				ScreenCenterX-p1.x, ScreenCenterY-p1.y);
+			SDL_RenderDrawLine(renderer,
+				ScreenCenterX-p1.x, ScreenCenterY-p1.y,
+				ScreenCenterX-p2.x, ScreenCenterY-p2.y);
+			SDL_RenderDrawLine(renderer,
+				ScreenCenterX-p2.x, ScreenCenterY-p2.y,
+				ScreenCenterX-p3.x, ScreenCenterY-p3.y);
+			SDL_RenderDrawLine(renderer,
+				ScreenCenterX-p3.x, ScreenCenterY-p3.y,
+				ScreenCenterX-p0.x, ScreenCenterY-p0.y);
+		}
+	}
+
+	// Player
+	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillCircle(renderer, ScreenCenterX, ScreenCenterY, 10);
+}
+
+void World::update_stats() {
+	int squirrelCount = std::count_if(animals.begin(), animals.end(),
+        [](const std::shared_ptr<Animal>& animal) {
+            return std::dynamic_pointer_cast<Squirrel>(animal) != nullptr;
+        });
+	squirrel_population.push_back(squirrelCount);
+    int catCount = std::count_if(animals.begin(), animals.end(),
+        [](const std::shared_ptr<Animal>& animal) {
+            return std::dynamic_pointer_cast<Cat>(animal) != nullptr;
+        });
+    cat_population.push_back(catCount);
+}
+
+void World::render_stats(SDL_Renderer* renderer)
+{
+	if (squirrel_population.size() < 64 || squirrel_population.size() != cat_population.size()) return;
+
+	auto max_pointer = std::max_element(squirrel_population.begin(), squirrel_population.end());
+	unsigned int squirrel_max_y = *max_pointer;
+
+	max_pointer = std::max_element(cat_population.begin(), cat_population.end());
+	unsigned int cat_max_y = *max_pointer;
+
+	float max_y;
+	squirrel_max_y > cat_max_y ? max_y = max_y = squirrel_max_y : max_y = cat_max_y;
+
+	float W = 600;
+	float H = 400;
+	float x_section_size = W/static_cast<float>(cat_population.size());
+
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	for (int i = 64; i < cat_population.size(); i+=cat_population.size()/64)
+		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, cat_population[i-64]*H/max_y, i*x_section_size, cat_population[i]*H/max_y);
+
+	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
+	for (int i = 64; i < squirrel_population.size(); i+=squirrel_population.size()/64)
+		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, squirrel_population[i-64]*H/max_y, i*x_section_size, squirrel_population[i]*H/max_y);
+}
+
+void World::draw_mini_map(SDL_Renderer* renderer)
+{
+	float width;
+	float height;
+
+	if (big_map) {
+    	width = 700/dimensions;
+		height = 700/dimensions;
+    } else {
+		width = 210/dimensions;
+		height = 210/dimensions;
+	}
 
 	#if DEBUG
 		std::shared_ptr<Animal> animal = animals.front();
@@ -220,55 +347,20 @@ void World::draw(SDL_Renderer* renderer)
 
         SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
     }
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 10);
 }
 
-void World::update_stats() {
-	int squirrelCount = std::count_if(animals.begin(), animals.end(),
-        [](const std::shared_ptr<Animal>& animal) {
-            return std::dynamic_pointer_cast<Squirrel>(animal) != nullptr;
-        });
-	squirrel_population.push_back(squirrelCount);
-    int catCount = std::count_if(animals.begin(), animals.end(),
-        [](const std::shared_ptr<Animal>& animal) {
-            return std::dynamic_pointer_cast<Cat>(animal) != nullptr;
-        });
-    cat_population.push_back(catCount);
-}
-
-void World::render_stats(SDL_Renderer* renderer)
-{
-	if (squirrel_population.size() < 64 || squirrel_population.size() != cat_population.size()) return;
-
-	auto max_pointer = std::max_element(squirrel_population.begin(), squirrel_population.end());
-	unsigned int squirrel_max_y = *max_pointer;
-
-	max_pointer = std::max_element(cat_population.begin(), cat_population.end());
-	unsigned int cat_max_y = *max_pointer;
-
-	float max_y;
-	squirrel_max_y > cat_max_y ? max_y = max_y = squirrel_max_y : max_y = cat_max_y;
-
-	float W = 600;
-	float H = 400;
-	float x_section_size = W/static_cast<float>(cat_population.size());
-
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	for (int i = 64; i < cat_population.size(); i+=cat_population.size()/64)
-		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, cat_population[i-64]*H/max_y, i*x_section_size, cat_population[i]*H/max_y);
-
-	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
-	for (int i = 64; i < squirrel_population.size(); i+=squirrel_population.size()/64)
-		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, squirrel_population[i-64]*H/max_y, i*x_section_size, squirrel_population[i]*H/max_y);
-}
-
-vec2d World::pos2chunk(vec2d pos) {
-	return vec2d(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
+Chunk* World::pos2chunk(vec2d pos) {
+	return &chunks
+		[static_cast<int>(pos.x / static_cast<float>(chunk_size))]
+		[static_cast<int>(pos.y / static_cast<float>(chunk_size))];
 }
 
 std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir)
 {
 	std::vector<Chunk*> viewed;
-	vec2d origin = pos2chunk(pos);
+	vec2d origin(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
 
 	vec2d vt1 = origin;
 	vec2d vt2 = origin + (dir.norm().rotate(-fov*.5) * distance*2);
