@@ -7,7 +7,7 @@
 
 class WaterVisual
 {
-	static const unsigned int points_dim = 16;
+	static const unsigned int points_dim = 8;
 	float grid[points_dim][points_dim];
 	bool reverse[points_dim][points_dim];
 	float speed = 1;
@@ -18,6 +18,7 @@ class WaterVisual
 
 public:
 	WaterVisual();
+	void setPos(vec2d pos);
 	void update();
 	void draw(SDL_Renderer* renderer);
 };

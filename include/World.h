@@ -11,6 +11,7 @@
 #include "terrain/Chunks.h"
 #include "beings/Animals.h"
 #include "beings/Player.h"
+#include "visuals/Chunks.h"
 
 #define KEEP_STATS 0
 #define DEBUG 0
@@ -27,6 +28,8 @@ class World
 	// Statictics
 	std::vector<unsigned int> squirrel_population;
 	std::vector<unsigned int> cat_population;
+
+	WaterVisual water_visual;
 
 	void update_stats();
 	void draw_mini_map(SDL_Renderer* renderer);

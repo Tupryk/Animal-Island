@@ -284,6 +284,6 @@ float crossProduct(vec2d v1, vec2d v2) {
     return (v1.x*v2.y) - (v1.y*v2.x);
 }
 
-float getZfromY(float y, float WindowHeight, float scaler) {
-    return (1-(y/WindowHeight+.5))*scaler;
+float getZfromY(float y, float WindowHeight, float scaler, float stretch) {
+    return ((y+WindowHeight*stretch*.5)/(WindowHeight*(1+stretch))+.5)*scaler;
 }

@@ -22,6 +22,8 @@ World::World() : player(vec2d(3232, 3232))
 		float perlin_index = 10*dist_vec.get_degree()/(360);
 		float rad = radious+perlinNoise1D(perlin_index, island_seed)*radious/16;
 
+		vec2d coor(i*chunk_size, j*chunk_size);
+
 		if (dist_vec.get_length() <= rad)
 		{
 			dist_vec.x = i-valley_center_x;
@@ -30,14 +32,14 @@ World::World() : player(vec2d(3232, 3232))
 			rad = valley_radious+perlinNoise1D(perlin_index, valley_seed)*radious/16;
 
 			if (dist_vec.get_length() <= rad)
-				chunks[i][j] = Chunk(ChunkTypes::VALLEY);
+				chunks[i][j] = Chunk(ChunkTypes::VALLEY, coor);
 			else
-				chunks[i][j] = Chunk(ChunkTypes::GRASS);
+				chunks[i][j] = Chunk(ChunkTypes::GRASS, coor);
 		}
 		else if (dist_vec.get_length() <= rad*1.2)
-			chunks[i][j] = Chunk(ChunkTypes::SAND);
+			chunks[i][j] = Chunk(ChunkTypes::SAND, coor);
 		else
-			chunks[i][j] = Chunk(ChunkTypes::SEA);
+			chunks[i][j] = Chunk(ChunkTypes::SEA, coor);
 		}}
 
 	// Setup chunk neighbors
@@ -172,89 +174,97 @@ void World::draw(SDL_Renderer* renderer)
 
 void World::draw_world(SDL_Renderer* renderer)
 {
-	unsigned int render_height = 5; // in chunks
-	unsigned int render_width = 7; // in chunks
 	float ScreenCenterX = 600;
 	float ScreenCenterY = 350;
+
+	int render_width = 15; // in chunks (Should not be divisible by 2)
+	int render_height = 9; // in chunks (Should not be divisible by 2)
+	int render_offset_x = 0;
+	int render_offset_y = -1;
 
 	unsigned int pcx = player.pos.x / static_cast<float>(chunk_size);
 	unsigned int pcy = player.pos.y / static_cast<float>(chunk_size);
 
 	// Floor
-	for (int i = -.5*(render_width-1); i <= 0; i++) {
-		for (int j = -.5*(render_height-1); j <= 0; j++) {
-			int px = chunk_size-(static_cast<int>(player.pos.x)%chunk_size) + chunk_size*i;
-			int py = chunk_size-(static_cast<int>(player.pos.y)%chunk_size) + chunk_size*j;
+	water_visual.update();
+	for (int j = -.5*(render_height-1)+render_offset_y; j <= render_height*.5+render_offset_y; j++) {
+		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
+		{
+			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
+			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
+			float z = getZfromY(oy, ScreenCenterY*2);
 
-			float y = -py;
-			float z = getZfromY(y, ScreenCenterY*2);
-			vec2d p0(-px * z, y*z);
-			vec2d p1((chunk_size-px)*z, y*z);
+			float x = ox;
+			float y = oy;
 
-			y = chunk_size-py;
+			vec2d p0(ScreenCenterX+x*z, ScreenCenterY+y*z);
+			vec2d p1(ScreenCenterX+(x+chunk_size)*z, ScreenCenterY+y*z);
+
+			y += chunk_size;
 			z = getZfromY(y, ScreenCenterY*2);
-			vec2d p2((chunk_size-px)*z, y*z);
-			vec2d p3(-px * z, y*z);
+			vec2d p2(ScreenCenterX+(x+chunk_size)*z, ScreenCenterY+y*z);
+			vec2d p3(ScreenCenterX+x*z, ScreenCenterY+y*z);
 
 			Sint16 vertsx[4] = {
-				static_cast<Sint16>(ScreenCenterX-p0.x),
-				static_cast<Sint16>(ScreenCenterX-p1.x),
-				static_cast<Sint16>(ScreenCenterX-p2.x),
-				static_cast<Sint16>(ScreenCenterX-p3.x)};
+				static_cast<Sint16>(p0.x),
+				static_cast<Sint16>(p1.x),
+				static_cast<Sint16>(p2.x),
+				static_cast<Sint16>(p3.x)};
 		    Sint16 vertsy[4] = {
-		    	static_cast<Sint16>(ScreenCenterY-p0.y),
-		    	static_cast<Sint16>(ScreenCenterY-p1.y),
-		    	static_cast<Sint16>(ScreenCenterY-p2.y),
-		    	static_cast<Sint16>(ScreenCenterY-p3.y)};
+		    	static_cast<Sint16>(p0.y),
+		    	static_cast<Sint16>(p1.y),
+		    	static_cast<Sint16>(p2.y),
+		    	static_cast<Sint16>(p3.y)};
 
-		    if (chunks[pcx+i][pcy+j].type == ChunkTypes::SEA)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 0, 255, 255);
+		    if (chunks[pcx+i][pcy+j].type == ChunkTypes::SEA) {
+		    	filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 0, 255, 255);
+		    	water_visual.setPos(vec2d(ox, oy));
+				water_visual.draw(renderer);
+		    }
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::GRASS)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 255, 0, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 100, 200, 0, 255);
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::VALLEY)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 0, 100, 0, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 50, 150, 0, 255);
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::SAND)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255, 255, 0, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 194, 178, 128, 255);
 
 			else filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255, 192, 203, 255);
 
 			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-			SDL_RenderDrawLine(renderer,
-				ScreenCenterX-p0.x, ScreenCenterY-p0.y,
-				ScreenCenterX-p1.x, ScreenCenterY-p1.y);
-			SDL_RenderDrawLine(renderer,
-				ScreenCenterX-p1.x, ScreenCenterY-p1.y,
-				ScreenCenterX-p2.x, ScreenCenterY-p2.y);
-			SDL_RenderDrawLine(renderer,
-				ScreenCenterX-p2.x, ScreenCenterY-p2.y,
-				ScreenCenterX-p3.x, ScreenCenterY-p3.y);
-			SDL_RenderDrawLine(renderer,
-				ScreenCenterX-p3.x, ScreenCenterY-p3.y,
-				ScreenCenterX-p0.x, ScreenCenterY-p0.y);
+			SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
+			SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
+			SDL_RenderDrawLine(renderer, p2.x, p2.y, p3.x, p3.y);
+			SDL_RenderDrawLine(renderer, p3.x, p3.y, p0.x, p0.y);
+		}
+		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
+		{
+			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
+			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
+			for (auto tree : chunks[pcx+i][pcy+j].trees)
+			{
+				float tx = tree.pos.x+ox;
+				float ty = tree.pos.y+oy;
+				float tz = getZfromY(ty, ScreenCenterY*2);
 
-			SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
-			for (auto tree : chunks[pcx+i][pcy+j].trees) {
-				float x = tree.pos.x-px;
-				y = tree.pos.y-py;
-				z = getZfromY(y, ScreenCenterY*2);
 				float size = 50;
-				vec2d start(x-size*.5, y);
-				vec2d end(x+size*.5, y);
-				float visual_size = ((start-end)*z).get_length();
+				vec2d start(tx-size*.5, ty);
+				vec2d end(tx+size*.5, ty);
+				float visual_size = ((start-end)*tz).get_length();
 
 				tree.visual.setScale(visual_size);
-				tree.visual.setPos(vec2d(ScreenCenterX-(x*z), ScreenCenterY-(y*z)));
+				tree.visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
 				tree.visual.draw(renderer);
 			}
 		}
+		if (j == 0) {
+			// Player
+			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    		SDL_RenderFillCircle(renderer, ScreenCenterX, ScreenCenterY, 10);
+		}
 	}
-
-	// Player
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderFillCircle(renderer, ScreenCenterX, ScreenCenterY, 10);
 }
 
 void World::update_stats() {

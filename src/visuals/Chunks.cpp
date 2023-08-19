@@ -1,6 +1,6 @@
 #include "visuals/Chunks.h"
 
-WaterVisual::WaterVisual() : size(700, 700), pos(10, 10)
+WaterVisual::WaterVisual() : size(100, 100), pos(0, 0)
 {
 	sep_x = size.x / points_dim;
 	sep_y = size.y / points_dim;
@@ -10,6 +10,8 @@ WaterVisual::WaterVisual() : size(700, 700), pos(10, 10)
 			reverse[i][j] = rand()%2 == 0;
 		}
 }
+
+void WaterVisual::setPos(vec2d pos) { this->pos = pos; }
 
 void WaterVisual::update()
 {
@@ -24,6 +26,9 @@ void WaterVisual::update()
 
 void WaterVisual::draw(SDL_Renderer* renderer)
 {
+	float ScreenCenterX = 600;
+	float ScreenCenterY = 350;
+
 	for (int i = 0; i < points_dim-1; i++)
 		for (int j = 0; j < points_dim-1; j++)
 		{
@@ -51,9 +56,23 @@ void WaterVisual::draw(SDL_Renderer* renderer)
             normz /= len_norm;
             float angle = (normz/sqrt(normx*normx+normy*normy+normz*normz)+1)/2;
 
+            for (int k = 0; k < 3; k++) {
+				float vz = getZfromY(vertsy[k], ScreenCenterY*2);
+				vertsx[k] *= vz;
+				vertsy[k] *= vz;
+				vertsx[k] += ScreenCenterX;
+				vertsy[k] += ScreenCenterY;
+            }
+
 			filledPolygonRGBA(renderer, vertsx, vertsy, 3, 100*angle, 100*angle, 255*angle, 255);
+
+			vertsx[0] = x0;
 			vertsx[1] = x0;
+			vertsx[2] = x1;
+
+			vertsy[0] = y0;
 			vertsy[1] = y1;
+			vertsy[2] = y1;
 
 			ax = 0;
 			ay = -sep_y;
@@ -72,18 +91,14 @@ void WaterVisual::draw(SDL_Renderer* renderer)
             normz /= len_norm;
             angle = (normz/sqrt(normx*normx+normy*normy+normz*normz)+1)/2;
 
+            for (int k = 0; k < 3; k++) {
+				float vz = getZfromY(vertsy[k], ScreenCenterY*2);
+				vertsx[k] *= vz;
+				vertsy[k] *= vz;
+				vertsx[k] += ScreenCenterX;
+				vertsy[k] += ScreenCenterY;
+            }
+
 			filledPolygonRGBA(renderer, vertsx, vertsy, 3, 100*angle, 100*angle, 255*angle, 255);
 		}
-	/*
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-	for (int i = 0; i < points_dim; i++)
-		for (int j = 0; j < points_dim; j++) {
-			if (i < points_dim-1 && j < points_dim-1)
-				SDL_RenderDrawLine(renderer, i*sep_x+pos.x, j*sep_y+pos.y, (i+1)*sep_x+pos.x, (j+1)*sep_y+pos.y);
-			if (i < points_dim-1)
-				SDL_RenderDrawLine(renderer, i*sep_x+pos.x, j*sep_y+pos.y, (i+1)*sep_x+pos.x, j*sep_y+pos.y);
-			if (j < points_dim-1)
-				SDL_RenderDrawLine(renderer, i*sep_x+pos.x, j*sep_y+pos.y, i*sep_x+pos.x, (j+1)*sep_y+pos.y);
-		}
-	*/
 }

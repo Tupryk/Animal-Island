@@ -1,6 +1,6 @@
 #include "terrain/Chunks.h"
 
-Chunk::Chunk(ChunkTypes type) : type(type)
+Chunk::Chunk(ChunkTypes type, vec2d coor) : type(type), coor(coor)
 {
 	if (type == ChunkTypes::VALLEY) {
 		unsigned int trees_count = rand()%3;

@@ -6,7 +6,7 @@ void App::update()
 {
 	world.update();
 	//av.update();
-	//wv.update();
+	//wv.update(vec2d(-100, -100));
 	//tv.update();
 	//tv.setPos(vec2d(WINDOW_WIDTH*.5, WINDOW_HEIGHT*.8));
 	//tv.setScale(20);
