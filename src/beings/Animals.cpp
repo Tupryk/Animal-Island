@@ -12,6 +12,7 @@ AnimalState Animal::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>
 
 Cat::Cat(vec2d pos) : Animal() {
 	this->pos = pos;
+	max_speed = 2;
 	is_male = rand()%2 == 0;
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 }
@@ -35,7 +36,6 @@ AnimalState Cat::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> a
 				if (squirrel->getHealth() > 0)
 					candidates.push_back(squirrel);
 	}
-
 	if (!candidates.empty() > 0 && hunger < max_hunger*.75) {
 		// Chase prey
 		Squirrel* closest_squirrel = candidates[0];
@@ -65,6 +65,8 @@ AnimalState Cat::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> a
 		}
 	}
 	pos = pos + vel + ( acc * .5 );
+	age++;
+	//if (age >= max_age) health = 0;
 
 	if (health > max_health) health = max_health;
 	return AnimalState::DEFAULT;
@@ -89,7 +91,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::list<std::shared_ptr<Anima
 	{
 		for (const auto& animal : animals)
 			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(animal.get())) {
-				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0)
+				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0 && squirrel->age > max_age*.3)
 					candidates.push_back(squirrel);
 			}
 			else if (Cat* cat = dynamic_cast<Cat*>(animal.get())) {
@@ -131,6 +133,8 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::list<std::shared_ptr<Anima
 		}
 	}
 	pos = pos + vel + ( acc * .5 );
+	age++;
+	if (age >= max_age) health = 0;
 
 	if (pregnant >= 0) pregnant++;
 	if (pregnant >= pregnancy_time) {

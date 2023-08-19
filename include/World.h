@@ -22,6 +22,12 @@ class World
     static const unsigned int chunk_size = 64;
 	Chunk chunks[dimensions][dimensions];
 
+	unsigned int day_cycle = 0;
+	unsigned int day_duration = 3600;
+	unsigned int year_cycle = 0;
+	unsigned int year_duration = 365;
+	float sun_angle;
+
 	// Shared ptr for different animal types
 	std::list<std::shared_ptr<Animal>> animals;
 
@@ -32,6 +38,7 @@ class World
 	WaterVisual water_visual;
 
 	void update_stats();
+	void update_time();
 	void draw_mini_map(SDL_Renderer* renderer);
 	void draw_world(SDL_Renderer* renderer);
 	void render_stats(SDL_Renderer* renderer);

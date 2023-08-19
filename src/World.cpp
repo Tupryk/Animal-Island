@@ -105,6 +105,7 @@ std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
 
 void World::update()
 {
+	update_time();
 	player.update_pos();
 	std::list<std::shared_ptr<Animal>> updated_animals;
    	
@@ -161,6 +162,17 @@ void World::update()
 	#if KEEP_STATS
 		update_stats();
 	#endif
+}
+
+void World::update_time()
+{
+	day_cycle++;
+	if (day_cycle >= day_duration) {
+		day_cycle = 0;
+		year_cycle++;
+		if (year_cycle >= year_duration) year_cycle = 0;
+	}
+	sun_angle = sin(day_cycle*M_PI*2/day_duration);
 }
 
 void World::draw(SDL_Renderer* renderer)
@@ -265,6 +277,29 @@ void World::draw_world(SDL_Renderer* renderer)
     		SDL_RenderFillCircle(renderer, ScreenCenterX, ScreenCenterY, 10);
 		}
 	}
+
+	// Animals
+	for (const auto& animal : animals)
+    {
+    	float x = animal->pos.x - player.pos.x;
+        float y = animal->pos.y - player.pos.y;
+
+        if (abs(x) < ScreenCenterX && abs(y) < ScreenCenterY*.5) {
+        	float z = getZfromY(y, ScreenCenterY*2);
+
+        	float size = 10;
+			vec2d start(x-size*.5, y);
+			vec2d end(x+size*.5, y);
+			float visual_size = ((start-end)*z).get_length();
+
+	        if (std::dynamic_pointer_cast<Cat>(animal))
+	            SDL_SetRenderDrawColor(renderer, 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 255);
+	        else if (std::dynamic_pointer_cast<Squirrel>(animal))
+	        	SDL_SetRenderDrawColor(renderer, 255*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 128*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 0, 255);
+
+	        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
+	    }
+    }
 }
 
 void World::update_stats() {

@@ -20,17 +20,17 @@ struct Animal
 	vec2d vel;
 	vec2d acc;
 	vec2d pos;
-	float friction = 1;
+	float friction = .5;
 
 	unsigned int cycle_counter = 0;
 	unsigned int cycle_limit = 0;
 
-	float max_hunger = 10000;
+	float max_hunger = 5000;
 	float hunger = max_hunger;
 
 	float max_health = 100;
 	float health = max_health;
-	float strength = 50;
+	float strength = max_health;
 
 	float see_distance = 10; // How far can be seen in front (meters)
 	float fov = 120; // Field of view in degrees
@@ -43,6 +43,7 @@ struct Animal
 	int horny_threshold = 100;
 
 	unsigned int age = 0;
+	unsigned int max_age = 10000;
 
 	float max_energy = 100;
 	float max_energy_discout = .1; // Multiply by age and subtract result from max energy.
