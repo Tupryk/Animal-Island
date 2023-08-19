@@ -22,7 +22,7 @@ class TreeVisual
 	float original_size;
 	float scale = 1;
 
-	void draw_branch(Branch branch, vec2d spos, SDL_Renderer* renderer);
+	void draw_branch(Branch branch, vec2d spos, SDL_Renderer* renderer, float brightness=1);
 	float getMinX(Branch branch, vec2d spos);
 	float getMaxX(Branch branch, vec2d spos);
 
@@ -31,5 +31,5 @@ public:
 	void setScale(float new_size);
 	void setPos(vec2d pos);
 	void update();
-	void draw(SDL_Renderer* renderer);
+	void draw(SDL_Renderer* renderer, float brightness=1);
 };

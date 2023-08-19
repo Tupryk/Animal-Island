@@ -7,7 +7,7 @@
 
 class WaterVisual
 {
-	static const unsigned int points_dim = 8;
+	static const unsigned int points_dim = 4;
 	float grid[points_dim][points_dim];
 	bool reverse[points_dim][points_dim];
 	float speed = 1;

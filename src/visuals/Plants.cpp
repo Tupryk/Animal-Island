@@ -4,7 +4,7 @@ Branch::Branch(vec2d pose, float thickness) : pose(pose)
 {
 	this->thickness = thickness;
 	if (this->thickness < 1) this->thickness = 1;
-	color = rand()%1000 * 0.001;
+	color = (500+rand()%500) * 0.001;
 }
 
 void Branch::populate(unsigned int child_min, unsigned int child_max, float child_len)
@@ -36,21 +36,21 @@ void TreeVisual::update()
 	// Drop seeds
 }
 
-void TreeVisual::draw(SDL_Renderer* renderer)
+void TreeVisual::draw(SDL_Renderer* renderer, float brightness)
 {
-	draw_branch(root, pos, renderer);
+	draw_branch(root, pos, renderer, brightness);
 }
 
-void TreeVisual::draw_branch(Branch branch, vec2d spos, SDL_Renderer* renderer)
+void TreeVisual::draw_branch(Branch branch, vec2d spos, SDL_Renderer* renderer, float brightness)
 {
 	vec2d epos(spos.x - branch.pose.x*scale, spos.y - branch.pose.y*scale);
 	thickLineRGBA(renderer,
     	spos.x, spos.y,
     	epos.x, epos.y,
     	branch.thickness*scale,
-    	150*branch.color, 90*branch.color, 70*branch.color, 255);
+    	150*branch.color*brightness, 90*branch.color*brightness, 70*branch.color*brightness, 255);
 	for (auto b : branch.branches)
-		draw_branch(b, epos, renderer);
+		draw_branch(b, epos, renderer, brightness);
 }
 
 float TreeVisual::getMinX(Branch branch, vec2d spos)

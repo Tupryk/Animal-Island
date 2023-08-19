@@ -1,6 +1,6 @@
 #include "World.h"
 
-World::World() : player(vec2d(3232, 3232))
+World::World() : player(vec2d(2000, 3232))
 {
 	srand( time( NULL ) );
 
@@ -200,8 +200,14 @@ void World::draw_world(SDL_Renderer* renderer)
 	// Floor
 	water_visual.update();
 	for (int j = -.5*(render_height-1)+render_offset_y; j <= render_height*.5+render_offset_y; j++) {
+		float gradienty = (.5*(render_height-1) + j)/render_height*.2+.8;
 		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
 		{
+			float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
+			float brightness = sun_angle;
+			if (sun_angle < .2) brightness = .2;
+			float gradient = gradientx*gradienty*brightness;
+
 			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
 			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
 			float z = getZfromY(oy, ScreenCenterY*2);
@@ -235,21 +241,23 @@ void World::draw_world(SDL_Renderer* renderer)
 		    }
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::GRASS)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 100, 200, 0, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 100*gradient, 200*gradient, 0, 255);
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::VALLEY)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 50, 150, 0, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 50*gradient, 150*gradient, 0, 255);
 
 			else if (chunks[pcx+i][pcy+j].type == ChunkTypes::SAND)
-				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 194, 178, 128, 255);
+				filledPolygonRGBA(renderer, vertsx, vertsy, 4, 194*gradient, 178*gradient, 128*gradient, 255);
 
-			else filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255, 192, 203, 255);
+			else filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255*gradient, 192*gradient, 203*gradient, 255);
 
-			SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-			SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
-			SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
-			SDL_RenderDrawLine(renderer, p2.x, p2.y, p3.x, p3.y);
-			SDL_RenderDrawLine(renderer, p3.x, p3.y, p0.x, p0.y);
+			#if DEBUG
+				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+				SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
+				SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
+				SDL_RenderDrawLine(renderer, p2.x, p2.y, p3.x, p3.y);
+				SDL_RenderDrawLine(renderer, p3.x, p3.y, p0.x, p0.y);
+			#endif
 		}
 		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
 		{
@@ -266,9 +274,14 @@ void World::draw_world(SDL_Renderer* renderer)
 				vec2d end(tx+size*.5, ty);
 				float visual_size = ((start-end)*tz).get_length();
 
+				float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
+				float brightness = sun_angle;
+				if (sun_angle < .2) brightness = .2;
+				float gradient = gradientx*gradienty*brightness;
+
 				tree.visual.setScale(visual_size);
 				tree.visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
-				tree.visual.draw(renderer);
+				tree.visual.draw(renderer, gradient);
 			}
 		}
 		if (j == 0) {
