@@ -187,14 +187,12 @@ void World::draw_world(SDL_Renderer* renderer)
 			int py = chunk_size-(static_cast<int>(player.pos.y)%chunk_size) + chunk_size*j;
 
 			float y = -py;
-			float z = 1-(y/(ScreenCenterY*2)+.5);
-			z *= 5;
+			float z = getZfromY(y, ScreenCenterY*2);
 			vec2d p0(-px * z, y*z);
 			vec2d p1((chunk_size-px)*z, y*z);
 
 			y = chunk_size-py;
-			z = 1-(y/(ScreenCenterY*2)+.5);
-			z *= 5;
+			z = getZfromY(y, ScreenCenterY*2);
 			vec2d p2((chunk_size-px)*z, y*z);
 			vec2d p3(-px * z, y*z);
 
@@ -236,6 +234,21 @@ void World::draw_world(SDL_Renderer* renderer)
 			SDL_RenderDrawLine(renderer,
 				ScreenCenterX-p3.x, ScreenCenterY-p3.y,
 				ScreenCenterX-p0.x, ScreenCenterY-p0.y);
+
+			SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
+			for (auto tree : chunks[pcx+i][pcy+j].trees) {
+				float x = tree.pos.x-px;
+				y = tree.pos.y-py;
+				z = getZfromY(y, ScreenCenterY*2);
+				float size = 50;
+				vec2d start(x-size*.5, y);
+				vec2d end(x+size*.5, y);
+				float visual_size = ((start-end)*z).get_length();
+
+				tree.visual.setScale(visual_size);
+				tree.visual.setPos(vec2d(ScreenCenterX-(x*z), ScreenCenterY-(y*z)));
+				tree.visual.draw(renderer);
+			}
 		}
 	}
 

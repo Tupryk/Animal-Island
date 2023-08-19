@@ -1,6 +1,6 @@
 #include "beings/Plants.h"
 
-Tree::Tree(vec2d pos, TreeState state) : pos(pos) {
+Tree::Tree(vec2d pos, TreeState state) : visual(), pos(pos) {
 	this->state = state;
 	health = max_health*.5+(rand()%static_cast<int>(max_health*.5));
 }

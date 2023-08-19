@@ -1,19 +1,23 @@
 #include "App.h"
 
-App::App() : world(), av(), wv() { srand( time( NULL ) ); }
+App::App() : world(), av(), wv(), tv() { srand( time( NULL ) ); }
 
 void App::update()
 {
-	//world.update();
+	world.update();
 	//av.update();
-	wv.update();
+	//wv.update();
+	//tv.update();
+	//tv.setPos(vec2d(WINDOW_WIDTH*.5, WINDOW_HEIGHT*.8));
+	//tv.setScale(20);
 }
 
 void App::draw()
 {
- 	//world.draw(renderer);
+ 	world.draw(renderer);
  	//av.draw(renderer);
- 	wv.draw(renderer);
+ 	//wv.draw(renderer);
+ 	//tv.draw(renderer);
 }
 
 void App::run()

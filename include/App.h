@@ -6,6 +6,7 @@
 #include "World.h"
 #include "visuals/Animals.h"
 #include "visuals/Chunks.h"
+#include "visuals/Plants.h"
 
 #define WINDOW_WIDTH 1200
 #define WINDOW_HEIGHT 700
@@ -18,6 +19,7 @@ class App
     World world;
     AnimalVisual av;
     WaterVisual wv;
+    TreeVisual tv;
 
     SDL_Event event;
 

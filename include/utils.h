@@ -59,6 +59,7 @@ struct vec2d
 double lerp(double a, double b, double t);
 double grad(int hash, double x);
 double perlinNoise1D(double x, int seed);
+float getZfromY(float y, float WindowHeight, float scaler=5);
 
 float crossProduct(vec2d v1, vec2d v2);
 

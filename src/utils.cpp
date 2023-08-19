@@ -283,3 +283,7 @@ int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d o
 float crossProduct(vec2d v1, vec2d v2) {
     return (v1.x*v2.y) - (v1.y*v2.x);
 }
+
+float getZfromY(float y, float WindowHeight, float scaler) {
+    return (1-(y/WindowHeight+.5))*scaler;
+}

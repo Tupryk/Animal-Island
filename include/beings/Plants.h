@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utils.h"
+#include "visuals/Plants.h"
 
 enum TreeState { SEED, SMALL, BIG };
 
@@ -18,6 +19,7 @@ class Tree
 	std::vector<Tree> drop_seeds();
 
 public:
+	TreeVisual visual;
 	TreeState state;
 	vec2d pos;
 
