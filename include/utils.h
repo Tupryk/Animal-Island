@@ -34,6 +34,10 @@ struct vec2d
     	return sqrt(x*x + y*y);
     }
 
+    float get_length_squared() { // For faster computations
+        return x*x + y*y;
+    }
+
     float get_degree() {
         double radians = std::atan2(y, x);
         double degrees = radians * (180.0 / M_PI);

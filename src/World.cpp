@@ -117,7 +117,7 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 	    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
 	}
 
-	AnimalState status = animal->update(chunks[cx][cy].neighbors, animals_viewed, plants_viewed);
+	AnimalState status = animal->update(chunks[cx][cy].neighbors, animals_viewed, plants_viewed, brightness);
 
 	// Temporary code to avoid animals from going to the sea
     unsigned int ncx = animal->pos.x / static_cast<float>(chunk_size);
@@ -188,6 +188,8 @@ void World::update_time()
 		if (year_cycle >= year_duration) year_cycle = 0;
 	}
 	sun_angle = sin(day_cycle*M_PI*2/day_duration);
+	brightness = sun_angle;
+	if (sun_angle < .2) brightness = .2;
 }
 
 void World::draw(SDL_Renderer* renderer)
@@ -197,8 +199,6 @@ void World::draw(SDL_Renderer* renderer)
     	return; }
     draw_world(renderer);
 
-    float brightness = sun_angle;
-	if (sun_angle < .2) brightness = .2;
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255*(1-brightness)); // Dark color with transparency
     SDL_RenderFillRect(renderer, nullptr);

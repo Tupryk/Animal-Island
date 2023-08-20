@@ -6,6 +6,7 @@ struct StaticBody
 {
 	vec2d pos;
 	vec2d size;
+	virtual ~StaticBody() = default;
 };
 
 struct RigidBody : public StaticBody
@@ -15,4 +16,5 @@ struct RigidBody : public StaticBody
 	float friction = .5;
 
 	void update_pos();
+	virtual ~RigidBody() = default;
 };

@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "utils.h"
+#include "Physics.h"
 #include "terrain/Chunks.h"
 #include "beings/Plants.h"
 
@@ -14,15 +15,9 @@ enum AnimalState { DEFAULT, HAD_CHILD, DEAD };
 struct Chunk;
 class Tree;
 
-struct Animal
+struct Animal : RigidBody
 {
 	float max_speed = 1;
-	float size = .5;
-
-	vec2d vel;
-	vec2d acc;
-	vec2d pos;
-	float friction = .5;
 
 	unsigned int cycle_counter = 0;
 	unsigned int cycle_limit = 0;
@@ -47,7 +42,7 @@ struct Animal
 	unsigned int age = 0;
 	unsigned int max_age = 100000;
 
-	float max_energy = 100;
+	float max_energy = 10000;
 	float max_energy_discout = .1; // Multiply by age and subtract result from max energy.
 	float min_energy = 10;
 	float energy = max_energy;
@@ -60,9 +55,9 @@ struct Animal
 	void hurt(float damage);
 	void wander();
 	AnimalState update_basic();
-	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
+	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 	virtual ~Animal() = default;
-	std::shared_ptr<Animal> getClosest(std::vector<std::shared_ptr<Animal>> animals);
+	std::shared_ptr<StaticBody> getClosest(std::vector<std::shared_ptr<StaticBody>> bodies);
 	virtual std::shared_ptr<Animal> build_child();
 };
 
@@ -72,7 +67,7 @@ public:
 	bool on_tree = false;
 	Squirrel(vec2d pos);
 	void give_pregnancy();
-	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 	virtual std::shared_ptr<Animal> build_child();
 };
 
@@ -80,7 +75,7 @@ class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 };
 
 class Shark : public Animal

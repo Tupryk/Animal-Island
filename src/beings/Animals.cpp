@@ -4,9 +4,10 @@ AnimalState Animal::update_basic()
 {
 	// Hunger
 	if (hunger > max_hunger) hunger = max_hunger;
-	if (hunger <= 0) health--;
+	if (hunger <= 0) { health--; hunger = 0; }
 	else {
-		if (hunger > max_hunger*.5) health++;
+		if (hunger > max_hunger*.5)
+			{ health++; if (acc.get_length() != 0) energy++; }
 		hunger--;
 	}
 
@@ -14,9 +15,10 @@ AnimalState Animal::update_basic()
 	lust++;
 	if (lust > lust_threshold) lust = lust_threshold;
 
-	vec2d tmp = vel + acc;
-	vel = tmp - tmp*friction;
-	pos = pos + vel;
+	// Movement and Energy
+	if (energy <= 0) acc = vec2d(0, 0);
+	update_pos();
+	if (acc.get_length() != 0) energy -= acc.get_length()*.0001;
 
 	// Age & Health
 	age++;
@@ -50,7 +52,7 @@ void Animal::wander()
 
 std::shared_ptr<Animal> Animal::build_child() { return nullptr; }
 
-AnimalState Animal::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants) {
+AnimalState Animal::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness) {
     return update_basic();
 }
 
@@ -61,12 +63,12 @@ Cat::Cat(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 }
 
-AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants)
+AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
 	// Prepare candidates for prey
-	std::vector<std::shared_ptr<Animal>> candidates;
+	std::vector<std::shared_ptr<StaticBody>> candidates;
 	if (hunger < max_hunger*.75 && !animals.empty())
 	{
 		for (auto animal : animals)
@@ -76,14 +78,14 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>>
 	}
 	if (!candidates.empty()) {
 		// Chase prey
-		std::shared_ptr<Animal> target_prey = getClosest(candidates);
+		std::shared_ptr<Animal> target_prey = std::dynamic_pointer_cast<Animal>(getClosest(candidates));
 		vec2d squirrel_direction(target_prey->pos.x - pos.x, target_prey->pos.y - pos.y);
 		acc = squirrel_direction.norm() * max_speed;
 
 		if (squirrel_direction.get_length() < reach) {
 			acc = vec2d(0, 0);
 			target_prey->hurt(strength*2);
-			if (target_prey->getHealth() <= 0) hunger += target_prey->size*1000;
+			if (target_prey->getHealth() <= 0) hunger += target_prey->size.x*target_prey->size.y*1000;
 		}
 		cycle_counter = 0;
 	}
@@ -91,19 +93,15 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>>
 	return update_basic();
 }
 
-std::shared_ptr<Animal> Animal::getClosest(std::vector<std::shared_ptr<Animal>> animals)
+std::shared_ptr<StaticBody> Animal::getClosest(std::vector<std::shared_ptr<StaticBody>> bodies)
 {
-	// Should be optimized
-	if (animals.empty()) return nullptr;
-	std::shared_ptr<Animal> closest = animals[0];
-	for (int i = 1; i < animals.size(); i++) {
-		vec2d direction(closest->pos.x - pos.x, closest->pos.y - pos.y);
-		vec2d new_direction(animals[i]->pos.x - pos.x, animals[i]->pos.y - pos.y);
-
-		if (direction.get_length() > new_direction.get_length())
-			closest = animals[i];
-	}
+	if (bodies.empty()) return nullptr;
+	auto closestIt = std::min_element(bodies.begin(), bodies.end(), [&](const std::shared_ptr<StaticBody>& a, const std::shared_ptr<StaticBody>& b) {
+	    return (a->pos - pos).get_length_squared() < (b->pos - pos).get_length_squared();
+	});
+	std::shared_ptr<StaticBody> closest = *closestIt;
 	return closest;
+
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {
@@ -112,12 +110,12 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);;
 }
 
-AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants)
+AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
-	std::vector<std::shared_ptr<Animal>> threads;
-	std::vector<std::shared_ptr<Animal>> candidates;
+	std::vector<std::shared_ptr<StaticBody>> threads;
+	std::vector<std::shared_ptr<StaticBody>> candidates;
 	if (!animals.empty() && this->pregnant < 0)
 	{
 		for (auto animal : animals)
