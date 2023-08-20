@@ -79,7 +79,7 @@ World::World() : player(vec2d(2000, 3232))
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int num = rand()%100;
+			unsigned int num = rand()%10;
 
 			float pos_x = rand()%chunk_size+(i*chunk_size);
 			float pos_y = rand()%chunk_size+(j*chunk_size);
@@ -110,20 +110,12 @@ std::shared_ptr<Animal> World::update_animal(const std::shared_ptr<Animal>& anim
     unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
 	unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
 
-	// Causes errors
-	/*
-	std::list<std::shared_ptr<Animal>> animals_viewed;
+	std::vector<std::shared_ptr<Animal>> animals_viewed;
 	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
-	for (auto chunk : chunks_viewed) {
-		std::cout << "Joining" << std::endl;
-		animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
-		std::cout << "Joined" << std::endl;
-	}
-	*/
-	
-	//std::cout << "updating" << std::endl;
-	AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals);
-	//std::cout << "updated" << std::endl;
+	for (auto chunk : chunks_viewed)
+	    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+
+	AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals_viewed);
 
 	if (status == AnimalState::DEAD)
 		return nullptr;
@@ -177,10 +169,10 @@ void World::update()
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].animals.clear();
 
-	 for (auto animal : animals) {
-        unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
-		chunks[cx][cy].animals.push_back(animal);
+	 for (auto animal_ptr : animals) {
+        unsigned int cx = animal_ptr->pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = animal_ptr->pos.y / static_cast<float>(chunk_size);
+		chunks[cx][cy].animals.push_back(animal_ptr);
 	}
 
 	// Store World data
@@ -206,6 +198,13 @@ void World::draw(SDL_Renderer* renderer)
     	render_stats(renderer);
     	return; }
     draw_world(renderer);
+
+    float brightness = sun_angle;
+	if (sun_angle < .2) brightness = .2;
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255*(1-brightness)); // Dark color with transparency
+    SDL_RenderFillRect(renderer, nullptr);
+
     draw_mini_map(renderer);
 }
 
@@ -229,9 +228,9 @@ void World::draw_world(SDL_Renderer* renderer)
 		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
 		{
 			float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
-			float brightness = sun_angle;
-			if (sun_angle < .2) brightness = .2;
-			float gradient = gradientx*gradienty*brightness;
+			// float brightness = sun_angle;
+			// if (sun_angle < .2) brightness = .2;
+			float gradient = gradientx*gradienty; //*brightness;
 
 			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
 			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
