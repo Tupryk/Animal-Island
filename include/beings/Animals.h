@@ -7,10 +7,12 @@
 
 #include "utils.h"
 #include "terrain/Chunks.h"
+#include "beings/Plants.h"
 
 enum AnimalState { DEFAULT, HAD_CHILD, DEAD };
 
 struct Chunk;
+class Tree;
 
 struct Animal
 {
@@ -43,7 +45,7 @@ struct Animal
 	int lust_threshold = 100;
 
 	unsigned int age = 0;
-	unsigned int max_age = 10000;
+	unsigned int max_age = 100000;
 
 	float max_energy = 100;
 	float max_energy_discout = .1; // Multiply by age and subtract result from max energy.
@@ -58,8 +60,10 @@ struct Animal
 	void hurt(float damage);
 	void wander();
 	AnimalState update_basic();
-	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
+	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
 	virtual ~Animal() = default;
+	std::shared_ptr<Animal> getClosest(std::vector<std::shared_ptr<Animal>> animals);
+	virtual std::shared_ptr<Animal> build_child();
 };
 
 class Squirrel : public Animal
@@ -68,14 +72,15 @@ public:
 	bool on_tree = false;
 	Squirrel(vec2d pos);
 	void give_pregnancy();
-	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
+	virtual std::shared_ptr<Animal> build_child();
 };
 
 class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants);
 };
 
 class Shark : public Animal

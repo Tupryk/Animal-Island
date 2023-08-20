@@ -15,6 +15,7 @@ World::World() : player(vec2d(2000, 3232))
 
 	int valley_seed = rand()%100000000;
 
+	// Generate Chunks
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -79,7 +80,7 @@ World::World() : player(vec2d(2000, 3232))
 	{
 		if (chunks[i][j].type == ChunkTypes::VALLEY ||
 			chunks[i][j].type == ChunkTypes::GRASS) {
-			unsigned int num = rand()%10;
+			unsigned int num = rand()%100;
 
 			float pos_x = rand()%chunk_size+(i*chunk_size);
 			float pos_y = rand()%chunk_size+(j*chunk_size);
@@ -103,34 +104,27 @@ std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
     }
 }
 
-std::shared_ptr<Animal> World::update_animal(const std::shared_ptr<Animal>& animal)
+AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 {
-	std::shared_ptr<Animal> anim_copy = createAnimal(animal);
-
-    unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
-	unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
+    unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
+	unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
 
 	std::vector<std::shared_ptr<Animal>> animals_viewed;
-	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
-	for (auto chunk : chunks_viewed)
+	std::vector<std::shared_ptr<Tree>> plants_viewed;
+	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
+	for (auto chunk : chunks_viewed) {
 	    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+	    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
+	}
 
-	AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals_viewed);
+	AnimalState status = animal->update(chunks[cx][cy].neighbors, animals_viewed, plants_viewed);
 
-	if (status == AnimalState::DEAD)
-		return nullptr;
-    else if (status == AnimalState::HAD_CHILD) {
-    	if (std::dynamic_pointer_cast<Squirrel>(anim_copy)) {
-        	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>(anim_copy->pos);
-			animals.push_back(child);
-    	}
-    }
-    // Temporary code to avoid animals from going to the sea
-    unsigned int ncx = anim_copy->pos.x / static_cast<float>(chunk_size);
-	unsigned int ncy = anim_copy->pos.y / static_cast<float>(chunk_size);
-    if (chunks[ncx][ncy].type == ChunkTypes::SEA) anim_copy->pos = vec2d(cx*chunk_size, cy*chunk_size);
+	// Temporary code to avoid animals from going to the sea
+    unsigned int ncx = animal->pos.x / static_cast<float>(chunk_size);
+	unsigned int ncy = animal->pos.y / static_cast<float>(chunk_size);
+    if (chunks[ncx][ncy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);
 
-    return anim_copy;
+    return status;
 }
 
 void World::update()
@@ -145,11 +139,15 @@ void World::update()
 	std::vector<std::shared_ptr<Animal>> updated_animals;
 	std::vector<std::thread> threads;
 	for (int i = 0; i < animals.size(); i++) {
-	    threads.emplace_back([this, &updated_animals, i]() {
-            auto anim_copy = update_animal(animals[i]);
-            if (anim_copy != nullptr) {
+	    threads.emplace_back([this, &updated_animals, i]()
+	    {
+	    	std::shared_ptr<Animal> anim_copy = createAnimal(animals[i]);
+            AnimalState status = update_animal(anim_copy);
+            if (status != AnimalState::DEAD) {
                 std::lock_guard<std::mutex> lock(updated_animals_mutex);
                 updated_animals.push_back(anim_copy);
+                if (status == AnimalState::HAD_CHILD)
+                	updated_animals.push_back(anim_copy->build_child());
             }
         });
 	}
@@ -284,29 +282,25 @@ void World::draw_world(SDL_Renderer* renderer)
 			#endif
 		}
 		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
+		for (auto tree : chunks[pcx+i][pcy+j].trees)
 		{
-			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
-			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
-			for (auto tree : chunks[pcx+i][pcy+j].trees)
-			{
-				float tx = tree.pos.x+ox;
-				float ty = tree.pos.y+oy;
-				float tz = getZfromY(ty, ScreenCenterY*2);
+			float tx = tree->pos.x-player.pos.x;
+			float ty = tree->pos.y-player.pos.y;
+			float tz = getZfromY(ty, ScreenCenterY*2);
 
-				float size = 50;
-				vec2d start(tx-size*.5, ty);
-				vec2d end(tx+size*.5, ty);
-				float visual_size = ((start-end)*tz).get_length();
+			float size = 50;
+			vec2d start(tx-size*.5, ty);
+			vec2d end(tx+size*.5, ty);
+			float visual_size = ((start-end)*tz).get_length();
 
-				float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
-				float brightness = sun_angle;
-				if (sun_angle < .2) brightness = .2;
-				float gradient = gradientx*gradienty*brightness;
+			float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
+			float brightness = sun_angle;
+			if (sun_angle < .2) brightness = .2;
+			float gradient = gradientx*gradienty*brightness;
 
-				tree.visual.setScale(visual_size);
-				tree.visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
-				tree.visual.draw(renderer, gradient);
-			}
+			tree->visual.setScale(visual_size);
+			tree->visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
+			tree->visual.draw(renderer, gradient);
 		}
 		if (j == 0) {
 			// Player
@@ -409,7 +403,6 @@ void World::draw_mini_map(SDL_Renderer* renderer)
     		auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
     		if (it != viewed.end())
     			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-
 	    else
 	    #endif
 	    if (chunks[i][j].type == ChunkTypes::SEA)
@@ -430,7 +423,7 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 
 		SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
 		for (auto tree : chunks[i][j].trees)
-			SDL_RenderFillCircle(renderer, rect.x+(tree.pos.x*width/chunk_size), rect.y+(tree.pos.y*height/chunk_size), 1);
+			SDL_RenderFillCircle(renderer, tree->pos.x*width/chunk_size, tree->pos.y*height/chunk_size, 1);
 	}}
 
 	for (const auto& animal : animals)

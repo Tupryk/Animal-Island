@@ -48,7 +48,9 @@ void Animal::wander()
 	}
 }
 
-AnimalState Animal::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals) {
+std::shared_ptr<Animal> Animal::build_child() { return nullptr; }
+
+AnimalState Animal::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants) {
     return update_basic();
 }
 
@@ -59,40 +61,49 @@ Cat::Cat(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 }
 
-AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals)
+AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
-	std::vector<Squirrel*> candidates;
-	if (!animals.empty())
+	// Prepare candidates for prey
+	std::vector<std::shared_ptr<Animal>> candidates;
+	if (hunger < max_hunger*.75 && !animals.empty())
 	{
-		for (const auto& animal : animals)
-			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(animal.get()))
-				if (squirrel->getHealth() > 0)
-					candidates.push_back(squirrel);
+		for (auto animal : animals)
+			if (std::dynamic_pointer_cast<Squirrel>(animal))
+				if (animal->getHealth() > 0)
+					candidates.push_back(animal);
 	}
-	if (!candidates.empty() > 0 && hunger < max_hunger*.75) {
+	if (!candidates.empty()) {
 		// Chase prey
-		Squirrel* closest_squirrel = candidates[0];
-		for (int i = 1; i < candidates.size(); i++) {
-			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-			vec2d squirrel_direction_new(candidates[i]->pos.x - pos.x, candidates[i]->pos.y - pos.y);
-
-			if (squirrel_direction.get_length() > squirrel_direction_new.get_length())
-				closest_squirrel = candidates[i];
-		}
-		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
+		std::shared_ptr<Animal> target_prey = getClosest(candidates);
+		vec2d squirrel_direction(target_prey->pos.x - pos.x, target_prey->pos.y - pos.y);
 		acc = squirrel_direction.norm() * max_speed;
 
 		if (squirrel_direction.get_length() < reach) {
 			acc = vec2d(0, 0);
-			closest_squirrel->hurt(strength*2);
-			if (closest_squirrel->getHealth() <= 0) hunger += closest_squirrel->size*1000;
+			target_prey->hurt(strength*2);
+			if (target_prey->getHealth() <= 0) hunger += target_prey->size*1000;
 		}
 		cycle_counter = 0;
 	}
 	else wander();
 	return update_basic();
+}
+
+std::shared_ptr<Animal> Animal::getClosest(std::vector<std::shared_ptr<Animal>> animals)
+{
+	// Should be optimized
+	if (animals.empty()) return nullptr;
+	std::shared_ptr<Animal> closest = animals[0];
+	for (int i = 1; i < animals.size(); i++) {
+		vec2d direction(closest->pos.x - pos.x, closest->pos.y - pos.y);
+		vec2d new_direction(animals[i]->pos.x - pos.x, animals[i]->pos.y - pos.y);
+
+		if (direction.get_length() > new_direction.get_length())
+			closest = animals[i];
+	}
+	return closest;
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {
@@ -101,25 +112,24 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);;
 }
 
-AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals)
+AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
-	std::vector<Cat*> threads;
-	std::vector<Squirrel*> candidates;
+	std::vector<std::shared_ptr<Animal>> threads;
+	std::vector<std::shared_ptr<Animal>> candidates;
 	if (!animals.empty() && this->pregnant < 0)
 	{
-		for (const auto& animal : animals)
-			if (Squirrel* squirrel = dynamic_cast<Squirrel*>(animal.get())) {
-				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0 && squirrel->age > max_age*.3)
-					candidates.push_back(squirrel);
+		for (auto animal : animals)
+			if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
+				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0 && squirrel->age > .01*max_age)
+					candidates.push_back(animal);
 			}
-			else if (Cat* cat = dynamic_cast<Cat*>(animal.get())) {
+			else if (std::shared_ptr<Cat> cat = std::dynamic_pointer_cast<Cat>(animal)) {
 				if ((cat->pos-this->pos).get_length() < 128)
-					threads.push_back(cat);	
+					threads.push_back(animal);	
 			}
 	}
-	if (candidates.size() > over_population_thresh) { health = 0; return AnimalState::DEAD; }
 	if (threads.size() > 0) {
 		vec2d sum(0, 0);
 		for (auto cat : threads)
@@ -127,14 +137,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Ani
 		acc = sum.norm() * max_speed;
 	}
 	else if (!candidates.empty() && lust >= lust_threshold) {
-		Squirrel* closest_squirrel = candidates[0];
-		for (int i = 1; i < candidates.size(); i++) {
-			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-			vec2d squirrel_direction_new(candidates[i]->pos.x - pos.x, candidates[i]->pos.y - pos.y);
-
-			if (squirrel_direction.get_length() > squirrel_direction_new.get_length())
-				closest_squirrel = candidates[i];
-		}
+		std::shared_ptr<Squirrel> closest_squirrel = std::dynamic_pointer_cast<Squirrel>(getClosest(candidates));
 		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
 		acc = squirrel_direction.norm() * max_speed;
 
@@ -150,6 +153,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Ani
 }
 
 void Squirrel::give_pregnancy() { pregnant = 0; }
+std::shared_ptr<Animal> Squirrel::build_child() { return std::make_shared<Squirrel>(pos); }
 
 float Animal::getHealth() { return health; }
 void Animal::hurt(float damage) { health -= damage; }

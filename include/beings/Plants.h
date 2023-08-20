@@ -1,9 +1,14 @@
 #pragma once
 
+#include <vector>
+
 #include "utils.h"
 #include "visuals/Plants.h"
+#include "beings/Animals.h"
 
 enum TreeState { SEED, SMALL, BIG };
+
+struct Animal;
 
 class Tree
 {
@@ -13,8 +18,8 @@ class Tree
 	int max_health = 100;
 	int health = max_health;
 
-	// unsigned int capacity = 5; // How many animals can hop on (maybe make it relative to size and weight of animals in the future)
-	// unsigned int current_load = 0;
+	unsigned int max_capacity = 5; // How many animals can hop on (maybe make it relative to size and weight of animals in the future)
+	std::vector<std::shared_ptr<Animal>> animals;
 
 	std::vector<Tree> drop_seeds();
 
@@ -26,4 +31,6 @@ public:
 	Tree(vec2d pos, TreeState state=TreeState::BIG);
 	void update();
 	int getHealth();
+	bool adopt(std::shared_ptr<Animal> animal);
+	unsigned int getAnimalPopulation();
 };

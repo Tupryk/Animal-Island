@@ -32,3 +32,11 @@ std::vector<Tree> Tree::drop_seeds()
 }
 
 int Tree::getHealth() { return health; }
+
+bool Tree::adopt(std::shared_ptr<Animal> animal) {
+	if (max_capacity >= animals.size()) return false;
+	animals.push_back(animal);
+	return true;
+}
+
+unsigned int Tree::getAnimalPopulation() { return animals.size(); }

@@ -45,7 +45,7 @@ class World
 	void draw_mini_map(SDL_Renderer* renderer);
 	void draw_world(SDL_Renderer* renderer);
 	void render_stats(SDL_Renderer* renderer);
-	std::shared_ptr<Animal> update_animal(const std::shared_ptr<Animal>& animal);
+	AnimalState update_animal(const std::shared_ptr<Animal>& animal);
 	Chunk* pos2chunk(vec2d pos);
 	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
 
