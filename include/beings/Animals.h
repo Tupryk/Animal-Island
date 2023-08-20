@@ -30,7 +30,7 @@ struct Animal
 
 	float max_health = 100;
 	float health = max_health;
-	float strength = max_health;
+	float strength = 100;
 
 	float see_distance = 10; // How far can be seen in front (meters)
 	float fov = 120; // Field of view in degrees
@@ -39,8 +39,8 @@ struct Animal
 	bool is_male = true;
 	int pregnant = -1;
 	int pregnancy_time = 100;
-	int horny = 0;
-	int horny_threshold = 100;
+	int lust = 0;
+	int lust_threshold = 100;
 
 	unsigned int age = 0;
 	unsigned int max_age = 10000;
@@ -50,11 +50,14 @@ struct Animal
 	float min_energy = 10;
 	float energy = max_energy;
 
+	unsigned int over_population_thresh = 64; // If there are this many animals of the same species close to the animal it dies.
+
 	float reach = 10;
 
 	float getHealth();
 	void hurt(float damage);
-	void updade_vel();
+	void wander();
+	AnimalState update_basic();
 	virtual AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
 	virtual ~Animal() = default;
 };
