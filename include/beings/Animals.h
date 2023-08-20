@@ -58,7 +58,7 @@ struct Animal
 	void hurt(float damage);
 	void wander();
 	AnimalState update_basic();
-	virtual AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
+	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
 	virtual ~Animal() = default;
 };
 
@@ -68,14 +68,14 @@ public:
 	bool on_tree = false;
 	Squirrel(vec2d pos);
 	void give_pregnancy();
-	AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
 };
 
 class Cat : public Animal
 {
 public:
 	Cat(vec2d pos);
-	AnimalState update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals);
 };
 
 class Shark : public Animal

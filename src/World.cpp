@@ -103,52 +103,76 @@ std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
     }
 }
 
+std::shared_ptr<Animal> World::update_animal(const std::shared_ptr<Animal>& animal)
+{
+	std::shared_ptr<Animal> anim_copy = createAnimal(animal);
+
+    unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
+	unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
+
+	// Causes errors
+	/*
+	std::list<std::shared_ptr<Animal>> animals_viewed;
+	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
+	for (auto chunk : chunks_viewed) {
+		std::cout << "Joining" << std::endl;
+		animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+		std::cout << "Joined" << std::endl;
+	}
+	*/
+	
+	//std::cout << "updating" << std::endl;
+	AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals);
+	//std::cout << "updated" << std::endl;
+
+	if (status == AnimalState::DEAD)
+		return nullptr;
+    else if (status == AnimalState::HAD_CHILD) {
+    	if (std::dynamic_pointer_cast<Squirrel>(anim_copy)) {
+        	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>(anim_copy->pos);
+			animals.push_back(child);
+    	}
+    }
+    // Temporary code to avoid animals from going to the sea
+    unsigned int ncx = anim_copy->pos.x / static_cast<float>(chunk_size);
+	unsigned int ncy = anim_copy->pos.y / static_cast<float>(chunk_size);
+    if (chunks[ncx][ncy].type == ChunkTypes::SEA) anim_copy->pos = vec2d(cx*chunk_size, cy*chunk_size);
+
+    return anim_copy;
+}
+
 void World::update()
 {
+	// Update Day Year Cycle
 	update_time();
+
+	// Update Player
 	player.update_pos();
-	std::list<std::shared_ptr<Animal>> updated_animals;
-   	
-    for (const auto& animal : animals)
-    {
-    	std::shared_ptr<Animal> anim_copy = createAnimal(animal);
 
-        unsigned int cx = anim_copy->pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = anim_copy->pos.y / static_cast<float>(chunk_size);
+	// Update Animals
+	std::vector<std::shared_ptr<Animal>> updated_animals;
+	std::vector<std::thread> threads;
+	for (int i = 0; i < animals.size(); i++) {
+	    threads.emplace_back([this, &updated_animals, i]() {
+            auto anim_copy = update_animal(animals[i]);
+            if (anim_copy != nullptr) {
+                std::lock_guard<std::mutex> lock(updated_animals_mutex);
+                updated_animals.push_back(anim_copy);
+            }
+        });
+	}
 
-		// Causes errors
-		/*
-		std::list<std::shared_ptr<Animal>> animals_viewed;
-    	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(anim_copy->fov, anim_copy->see_distance, anim_copy->pos, anim_copy->acc);
-    	for (auto chunk : chunks_viewed) {
-    		std::cout << "Joining" << std::endl;
-    		animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
-    		std::cout << "Joined" << std::endl;
-    	}
-    	*/
-		
-		//std::cout << "updating" << std::endl;
-		AnimalState status = anim_copy->update(chunks[cx][cy].neighbors, animals);
-		//std::cout << "updated" << std::endl;
+	for (std::thread& thread : threads)
+	    thread.join();
 
-		if (status == AnimalState::DEAD)
-			continue;
-        else if (status == AnimalState::HAD_CHILD) {
-        	if (std::dynamic_pointer_cast<Squirrel>(anim_copy)) {
-            	std::shared_ptr<Squirrel> child = std::make_shared<Squirrel>(anim_copy->pos);
-    			animals.push_back(child);
-        	}
-        }
-        // Temporary code to avoid animals from going to the sea
-        unsigned int ncx = anim_copy->pos.x / static_cast<float>(chunk_size);
-		unsigned int ncy = anim_copy->pos.y / static_cast<float>(chunk_size);
-        if (chunks[ncx][ncy].type == ChunkTypes::SEA) anim_copy->pos = vec2d(cx*chunk_size, cy*chunk_size);
+	animals.clear();
 
-        updated_animals.push_back(anim_copy);
-    }
-
-    animals = std::move(updated_animals);
+	// Move the updated animals back to the original list
+	for (const auto& updated_animal : updated_animals) {
+	    animals.push_back(updated_animal);
+	}
     
+    // Update Chunks
     for (int i = 0; i < dimensions; i++)
 		for (int j = 0; j < dimensions; j++)
 			chunks[i][j].animals.clear();
@@ -159,6 +183,7 @@ void World::update()
 		chunks[cx][cy].animals.push_back(animal);
 	}
 
+	// Store World data
 	#if KEEP_STATS
 		update_stats();
 	#endif

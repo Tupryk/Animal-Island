@@ -48,7 +48,7 @@ void Animal::wander()
 	}
 }
 
-AnimalState Animal::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals) {
+AnimalState Animal::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals) {
     return update_basic();
 }
 
@@ -59,7 +59,7 @@ Cat::Cat(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 }
 
-AnimalState Cat::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals)
+AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
 
@@ -101,7 +101,7 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);;
 }
 
-AnimalState Squirrel::update(Chunk* neighbors[], std::list<std::shared_ptr<Animal>> animals)
+AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals)
 {
 	if (health <= 0) return AnimalState::DEAD;
 

@@ -1,8 +1,10 @@
 #pragma once
 
 #include <list>
+#include <mutex>
 #include <vector>
 #include <memory>
+#include <thread>
 #include <algorithm>
 
 #include <SDL2/SDL.h>
@@ -29,7 +31,8 @@ class World
 	float sun_angle;
 
 	// Shared ptr for different animal types
-	std::list<std::shared_ptr<Animal>> animals;
+	std::vector<std::shared_ptr<Animal>> animals;
+	std::mutex updated_animals_mutex;
 
 	// Statictics
 	std::vector<unsigned int> squirrel_population;
@@ -42,6 +45,7 @@ class World
 	void draw_mini_map(SDL_Renderer* renderer);
 	void draw_world(SDL_Renderer* renderer);
 	void render_stats(SDL_Renderer* renderer);
+	std::shared_ptr<Animal> update_animal(const std::shared_ptr<Animal>& animal);
 	Chunk* pos2chunk(vec2d pos);
 	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
 
