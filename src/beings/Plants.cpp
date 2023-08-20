@@ -1,6 +1,7 @@
 #include "beings/Plants.h"
 
-Tree::Tree(vec2d pos, TreeState state) : visual(), pos(pos) {
+Tree::Tree(vec2d pos, TreeState state) : visual() {
+	this->pos = pos;
 	this->state = state;
 	health = max_health*.5+(rand()%static_cast<int>(max_health*.5));
 }
@@ -33,10 +34,13 @@ std::vector<Tree> Tree::drop_seeds()
 
 int Tree::getHealth() { return health; }
 
-bool Tree::adopt(std::shared_ptr<Animal> animal) {
-	if (max_capacity >= animals.size()) return false;
-	animals.push_back(animal);
-	return true;
+void Tree::adopt(float size) {
+	load += size;
 }
 
-unsigned int Tree::getAnimalPopulation() { return animals.size(); }
+void Tree::drop(float size) {
+	load -= size;
+}
+
+unsigned int Tree::getAnimalPopulation() { return load; }
+bool Tree::fits(float size) { return load+size <= max_capacity; }

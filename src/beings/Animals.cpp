@@ -11,10 +11,6 @@ AnimalState Animal::update_basic()
 		hunger--;
 	}
 
-	// Lust
-	lust++;
-	if (lust > lust_threshold) lust = lust_threshold;
-
 	// Movement and Energy
 	if (energy <= 0) acc = vec2d(0, 0);
 	update_pos();
@@ -27,10 +23,15 @@ AnimalState Animal::update_basic()
 	if (health <= 0) return AnimalState::DEAD;
 
 	// Pregnancy
-	if (pregnant >= 0) pregnant++;
-	if (pregnant >= pregnancy_time) {
-		pregnant = -1;
-		return AnimalState::HAD_CHILD;
+	if (pregnant >= 0) {
+		pregnant++;
+		if (pregnant >= pregnancy_time) {
+			pregnant = -1;
+			return AnimalState::HAD_CHILD;
+		}
+	} else {
+		lust++;
+		if (lust > lust_threshold) lust = lust_threshold;
 	}
 
 	return AnimalState::DEFAULT;
@@ -101,7 +102,6 @@ std::shared_ptr<StaticBody> Animal::getClosest(std::vector<std::shared_ptr<Stati
 	});
 	std::shared_ptr<StaticBody> closest = *closestIt;
 	return closest;
-
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {
@@ -113,44 +113,75 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
 	if (health <= 0) return AnimalState::DEAD;
+	
+	if (brightness <= .3) {
+		// Get trees
+		std::vector<std::shared_ptr<StaticBody>> trees;
+		for (auto tree : plants)
+			if (tree->fits(size.x*size.y))
+				trees.push_back(tree);
 
-	std::vector<std::shared_ptr<StaticBody>> threads;
-	std::vector<std::shared_ptr<StaticBody>> candidates;
-	if (!animals.empty() && this->pregnant < 0)
-	{
-		for (auto animal : animals)
-			if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
-				if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0 && squirrel->age > .01*max_age)
-					candidates.push_back(animal);
-			}
-			else if (std::shared_ptr<Cat> cat = std::dynamic_pointer_cast<Cat>(animal)) {
-				if ((cat->pos-this->pos).get_length() < 128)
-					threads.push_back(animal);	
-			}
-	}
-	if (threads.size() > 0) {
-		vec2d sum(0, 0);
-		for (auto cat : threads)
-			sum = sum + (this->pos-cat->pos);
-		acc = sum.norm() * max_speed;
-	}
-	else if (!candidates.empty() && lust >= lust_threshold) {
-		std::shared_ptr<Squirrel> closest_squirrel = std::dynamic_pointer_cast<Squirrel>(getClosest(candidates));
-		vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
-		acc = squirrel_direction.norm() * max_speed;
+		// Goto Nearest Tree
+		if (on_tree) { energy++; acc = vec2d(0, 0); } 
+		else if (!on_tree && !trees.empty()) {
+			std::shared_ptr<Tree> closest_tree = std::dynamic_pointer_cast<Tree>(getClosest(trees));
+			vec2d direction(closest_tree->pos.x - pos.x, closest_tree->pos.y - pos.y);
+			acc = direction.norm() * max_speed;
 
-		if (squirrel_direction.get_length() < reach && is_male) {
-			acc = vec2d(0, 0);
-			closest_squirrel->give_pregnancy();
-			lust = 0;
+			if (direction.get_length() < reach) {
+				acc = vec2d(0, 0);
+				closest_tree->adopt(size.x*size.y);
+				on_tree = closest_tree;
+			}
 		}
-		cycle_counter = 0;
+		else wander();
+		return update_basic();
 	}
-	else wander();
-	return update_basic();
+	else
+	{
+		if (on_tree) {
+			on_tree->drop(size.x*size.y);
+			on_tree = nullptr;
+		}
+
+		std::vector<std::shared_ptr<StaticBody>> threads;
+		std::vector<std::shared_ptr<StaticBody>> candidates;
+		if (!animals.empty() && this->pregnant < 0)
+		{
+			for (auto animal : animals)
+				if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
+					if (squirrel->pregnant < 0 && this->is_male != squirrel->is_male && squirrel->getHealth() > 0 && squirrel->age > .01*max_age)
+						candidates.push_back(animal);
+				}
+				else if (std::shared_ptr<Cat> cat = std::dynamic_pointer_cast<Cat>(animal)) {
+					if ((cat->pos-this->pos).get_length() < 128)
+						threads.push_back(animal);	
+				}
+		}
+		if (threads.size() > 0) {
+			vec2d sum(0, 0);
+			for (auto cat : threads)
+				sum = sum + (this->pos-cat->pos);
+			acc = sum.norm() * max_speed;
+		}
+		else if (!candidates.empty() && lust >= lust_threshold) {
+			std::shared_ptr<Squirrel> closest_squirrel = std::dynamic_pointer_cast<Squirrel>(getClosest(candidates));
+			vec2d squirrel_direction(closest_squirrel->pos.x - pos.x, closest_squirrel->pos.y - pos.y);
+			acc = squirrel_direction.norm() * max_speed;
+
+			if (squirrel_direction.get_length() < reach && is_male) {
+				acc = vec2d(0, 0);
+				closest_squirrel->give_pregnancy();
+				lust = 0;
+			}
+			cycle_counter = 0;
+		}
+		else wander();
+		return update_basic();
+	}
 }
 
-void Squirrel::give_pregnancy() { pregnant = 0; }
+void Squirrel::give_pregnancy() { lust = 0; pregnant = 0; }
 std::shared_ptr<Animal> Squirrel::build_child() { return std::make_shared<Squirrel>(pos); }
 
 float Animal::getHealth() { return health; }

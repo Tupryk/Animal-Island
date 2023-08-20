@@ -7,13 +7,13 @@ World::World() : player(vec2d(2000, 3232))
 	float radious = dimensions*.25;
 	float center_point_xy = dimensions*.5;
 
-	int island_seed = rand()%100000000;
+	int island_seed = rand();
 
 	float valley_radious = dimensions*.1;
 	float valley_center_x = center_point_xy+(dimensions*.05-rand()%static_cast<int>(dimensions*.1));
 	float valley_center_y = center_point_xy+(dimensions*.05-rand()%static_cast<int>(dimensions*.1));
 
-	int valley_seed = rand()%100000000;
+	int valley_seed = rand();
 
 	// Generate Chunks
 	for (int i = 0; i < dimensions; i++) {
@@ -94,7 +94,7 @@ World::World() : player(vec2d(2000, 3232))
     		}}}}
 }
 
-std::shared_ptr<Animal> createAnimal(const std::shared_ptr<Animal>& animal) {
+std::shared_ptr<Animal> World::createAnimalCopy(const std::shared_ptr<Animal>& animal) {
     if (std::dynamic_pointer_cast<Cat>(animal)) {
         return std::make_shared<Cat>(*std::dynamic_pointer_cast<Cat>(animal));
     } else if (std::dynamic_pointer_cast<Squirrel>(animal)) {
@@ -141,7 +141,7 @@ void World::update()
 	for (int i = 0; i < animals.size(); i++) {
 	    threads.emplace_back([this, &updated_animals, i]()
 	    {
-	    	std::shared_ptr<Animal> anim_copy = createAnimal(animals[i]);
+	    	std::shared_ptr<Animal> anim_copy = createAnimalCopy(animals[i]);
             AnimalState status = update_animal(anim_copy);
             if (status != AnimalState::DEAD) {
                 std::lock_guard<std::mutex> lock(updated_animals_mutex);
@@ -156,11 +156,8 @@ void World::update()
 	    thread.join();
 
 	animals.clear();
-
-	// Move the updated animals back to the original list
-	for (const auto& updated_animal : updated_animals) {
+	for (const auto& updated_animal : updated_animals)
 	    animals.push_back(updated_animal);
-	}
     
     // Update Chunks
     for (int i = 0; i < dimensions; i++)
@@ -325,9 +322,10 @@ void World::draw_world(SDL_Renderer* renderer)
 
 	        if (std::dynamic_pointer_cast<Cat>(animal))
 	            SDL_SetRenderDrawColor(renderer, 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 255);
-	        else if (std::dynamic_pointer_cast<Squirrel>(animal))
+	        else if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
+	        	if (squirrel->on_tree) y -= 50;
 	        	SDL_SetRenderDrawColor(renderer, 255*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 128*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 0, 255);
-
+	        }
 	        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
 	    }
     }

@@ -5,12 +5,13 @@
 #include "utils.h"
 #include "visuals/Plants.h"
 #include "beings/Animals.h"
+#include "Physics.h"
 
 enum TreeState { SEED, SMALL, BIG };
 
 struct Animal;
 
-class Tree
+class Tree : public StaticBody
 {
 	unsigned int cycle = 0;
 	unsigned int cycle_limit = 256; // After this many days the tree drops nuts.
@@ -19,18 +20,19 @@ class Tree
 	int health = max_health;
 
 	unsigned int max_capacity = 5; // How many animals can hop on (maybe make it relative to size and weight of animals in the future)
-	std::vector<std::shared_ptr<Animal>> animals;
+	unsigned int load = 0;
 
 	std::vector<Tree> drop_seeds();
 
 public:
 	TreeVisual visual;
 	TreeState state;
-	vec2d pos;
 
 	Tree(vec2d pos, TreeState state=TreeState::BIG);
 	void update();
 	int getHealth();
-	bool adopt(std::shared_ptr<Animal> animal);
+	void adopt(float size);
+	void drop(float size);
+	bool fits(float size);
 	unsigned int getAnimalPopulation();
 };

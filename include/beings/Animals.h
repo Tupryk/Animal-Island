@@ -64,7 +64,7 @@ struct Animal : RigidBody
 class Squirrel : public Animal
 {
 public:
-	bool on_tree = false;
+	std::shared_ptr<Tree> on_tree = nullptr;
 	Squirrel(vec2d pos);
 	void give_pregnancy();
 	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
