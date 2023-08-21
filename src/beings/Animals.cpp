@@ -14,7 +14,9 @@ AnimalState Animal::update_basic()
 	// Movement and Energy
 	if (energy <= 0) acc = vec2d(0, 0);
 	update_pos();
-	if (acc.get_length() != 0) energy -= acc.get_length()*.0001;
+	if (acc.get_length() != 0) {
+		energy -= acc.get_length()*.0001;
+		look_dir = acc; }
 
 	// Age & Health
 	age++;
@@ -113,7 +115,7 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
 	if (health <= 0) return AnimalState::DEAD;
-	
+
 	if (brightness <= .3) {
 		// Get trees
 		std::vector<std::shared_ptr<StaticBody>> trees;
@@ -181,7 +183,7 @@ AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Ani
 	}
 }
 
-void Squirrel::give_pregnancy() { lust = 0; pregnant = 0; }
+void Squirrel::give_pregnancy() { acc = vec2d(0, 0); lust = 0; pregnant = 0; }
 std::shared_ptr<Animal> Squirrel::build_child() { return std::make_shared<Squirrel>(pos); }
 
 float Animal::getHealth() { return health; }

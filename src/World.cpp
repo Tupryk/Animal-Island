@@ -111,7 +111,7 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 
 	std::vector<std::shared_ptr<Animal>> animals_viewed;
 	std::vector<std::shared_ptr<Tree>> plants_viewed;
-	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
+	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->look_dir);
 	for (auto chunk : chunks_viewed) {
 	    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
 	    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
@@ -194,7 +194,10 @@ void World::draw(SDL_Renderer* renderer)
     if (display_stats) {
     	render_stats(renderer);
     	return; }
-    draw_world(renderer);
+
+    if (player.in_house)
+    	player.in_house->visual.draw_inside(renderer, player.pos);
+    else draw_world(renderer);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255*(1-brightness)); // Dark color with transparency
@@ -434,7 +437,10 @@ void World::draw_mini_map(SDL_Renderer* renderer)
         SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
     }
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 10);
+    if (player->in_house)
+    	SDL_RenderFillCircle(renderer, player.in_house->pos.x * width / chunk_size, player.in_house->pos.y * height / chunk_size, 10);
+   	else
+    	SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 10);
 }
 
 Chunk* World::pos2chunk(vec2d pos) {
