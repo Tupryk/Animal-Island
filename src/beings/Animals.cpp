@@ -75,8 +75,8 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>>
 	if (hunger < max_hunger*.75 && !animals.empty())
 	{
 		for (auto animal : animals)
-			if (std::dynamic_pointer_cast<Squirrel>(animal))
-				if (animal->getHealth() > 0)
+			if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal))
+				if (squirrel->getHealth() > 0 && !squirrel->on_tree)
 					candidates.push_back(animal);
 	}
 	if (!candidates.empty()) {

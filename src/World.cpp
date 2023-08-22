@@ -475,7 +475,7 @@ std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d po
 	std::vector<Chunk*> viewed;
 	vec2d origin(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
 
-	vec2d vt1 = origin;
+	vec2d vt1 = origin - dir.norm() * 3;
 	vec2d vt2 = origin + (dir.norm().rotate(-fov*.5) * distance*2);
 	vec2d vt3 = origin + (dir.norm().rotate(fov*.5) * distance*2);
 
