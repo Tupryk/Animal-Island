@@ -42,6 +42,8 @@ World::World() : player(vec2d(2000, 3232))
 		else
 			chunks[i][j] = Chunk(ChunkTypes::SEA, coor);
 		}}
+	std::shared_ptr<House> house = std::make_shared<House>(chunks[35][50].coor);
+	chunks[35][50].structures.push_back(house);
 
 	// Setup chunk neighbors
 	for (int i = 0; i < dimensions; i++) {
@@ -281,26 +283,41 @@ void World::draw_world(SDL_Renderer* renderer)
 				SDL_RenderDrawLine(renderer, p3.x, p3.y, p0.x, p0.y);
 			#endif
 		}
-		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
-		for (auto tree : chunks[pcx+i][pcy+j].trees)
-		{
-			float tx = tree->pos.x-player.pos.x;
-			float ty = tree->pos.y-player.pos.y;
-			float tz = getZfromY(ty, ScreenCenterY*2);
+		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++) {
+			for (auto tree : chunks[pcx+i][pcy+j].trees)
+			{
+				float tx = tree->pos.x-player.pos.x;
+				float ty = tree->pos.y-player.pos.y;
+				float tz = getZfromY(ty, ScreenCenterY*2);
 
-			float size = 50;
-			vec2d start(tx-size*.5, ty);
-			vec2d end(tx+size*.5, ty);
-			float visual_size = ((start-end)*tz).get_length();
+				float size = 50;
+				vec2d start(tx-size*.5, ty);
+				vec2d end(tx+size*.5, ty);
+				float visual_size = ((start-end)*tz).get_length();
 
-			float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
-			float brightness = sun_angle;
-			if (sun_angle < .2) brightness = .2;
-			float gradient = gradientx*gradienty*brightness;
+				float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
+				float brightness = sun_angle;
+				if (sun_angle < .2) brightness = .2;
+				float gradient = gradientx*gradienty*brightness;
 
-			tree->visual.setScale(visual_size);
-			tree->visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
-			tree->visual.draw(renderer, gradient);
+				tree->visual.setScale(visual_size);
+				tree->visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));
+				tree->visual.draw(renderer, gradient);
+			}
+			for (auto house : chunks[pcx+i][pcy+j].structures)
+			{
+				float tx = house->pos.x-player.pos.x;
+				float ty = house->pos.y-player.pos.y;
+				float tz = getZfromY(ty, ScreenCenterY*2);
+
+				float size = 100;
+				vec2d start(tx-size*.5, ty);
+				vec2d end(tx+size*.5, ty);
+				float visual_size = ((start-end)*tz).get_length();
+
+				SDL_SetRenderDrawColor(renderer, 255, 128, 128, 255);
+				SDL_RenderFillCircle(renderer, ScreenCenterX+tx*tz, ScreenCenterY+ty*tz, visual_size);
+			}
 		}
 		if (j == 0) {
 			// Player
@@ -425,6 +442,10 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 		SDL_SetRenderDrawColor(renderer, 100, 255, 100, 255);
 		for (auto tree : chunks[i][j].trees)
 			SDL_RenderFillCircle(renderer, tree->pos.x*width/chunk_size, tree->pos.y*height/chunk_size, 1);
+
+		SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
+		for (auto house : chunks[i][j].structures)
+			SDL_RenderFillCircle(renderer, house->pos.x*width/chunk_size, house->pos.y*height/chunk_size, 3);
 	}}
 
 	for (const auto& animal : animals)
@@ -437,7 +458,7 @@ void World::draw_mini_map(SDL_Renderer* renderer)
         SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
     }
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    if (player->in_house)
+    if (player.in_house)
     	SDL_RenderFillCircle(renderer, player.in_house->pos.x * width / chunk_size, player.in_house->pos.y * height / chunk_size, 10);
    	else
     	SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 10);

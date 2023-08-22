@@ -4,10 +4,11 @@
 #include "Physics.h"
 #include "visuals/Structures.h"
 
-class House : StaticBody
+class House : public StaticBody
 {
+public:
 	vec2d exit;
 
-public:
+	House(vec2d pos);
 	HouseVisual visual;
 };
