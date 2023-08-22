@@ -341,10 +341,15 @@ void World::draw_world(SDL_Renderer* renderer)
 			float visual_size = ((start-end)*z).get_length();
 
 	        if (std::dynamic_pointer_cast<Cat>(animal))
-	            SDL_SetRenderDrawColor(renderer, 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 200*(animal->age/animal->max_age), 255);
+	            SDL_SetRenderDrawColor(renderer,
+	            	200*(animal->age/animal->max_age),
+	            	200*(animal->age/animal->max_age),
+	            	200*(animal->age/animal->max_age), 255);
 	        else if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
 	        	if (squirrel->on_tree) y -= 50;
-	        	SDL_SetRenderDrawColor(renderer, 255*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 128*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 0, 255);
+	        	SDL_SetRenderDrawColor(renderer,
+	        		255*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)),
+	        		128*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 0, 255);
 	        }
 	        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
 	    }
@@ -383,11 +388,17 @@ void World::render_stats(SDL_Renderer* renderer)
 
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	for (int i = 64; i < cat_population.size(); i+=cat_population.size()/64)
-		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, cat_population[i-64]*H/max_y, i*x_section_size, cat_population[i]*H/max_y);
+		SDL_RenderDrawLine(renderer,
+			(i-64)*x_section_size,
+			cat_population[i-64]*H/max_y,
+			i*x_section_size, cat_population[i]*H/max_y);
 
 	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
 	for (int i = 64; i < squirrel_population.size(); i+=squirrel_population.size()/64)
-		SDL_RenderDrawLine(renderer, (i-64)*x_section_size, squirrel_population[i-64]*H/max_y, i*x_section_size, squirrel_population[i]*H/max_y);
+		SDL_RenderDrawLine(renderer,
+			(i-64)*x_section_size,
+			squirrel_population[i-64]*H/max_y,
+			i*x_section_size, squirrel_population[i]*H/max_y);
 }
 
 void World::draw_mini_map(SDL_Renderer* renderer)
@@ -470,6 +481,7 @@ Chunk* World::pos2chunk(vec2d pos) {
 		[static_cast<int>(pos.y / static_cast<float>(chunk_size))];
 }
 
+// Doesn't quite work
 std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir)
 {
 	std::vector<Chunk*> viewed;
@@ -499,28 +511,20 @@ std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d po
 	vec2d vs1(vt2.x - vt1.x, vt2.y - vt1.y);
 	vec2d vs2(vt3.x - vt1.x, vt3.y - vt1.y);
 
-	for (int x = minX; x <= maxX; x++) {
-		for (int y = minY; y <= maxY; y++)
-		{
-			vec2d q(x - vt1.x, y - vt1.y);
+	for (int x = minX; x <= maxX; x++)
+	for (int y = minY; y <= maxY; y++)
+	{
+		vec2d q(x - vt1.x, y - vt1.y);
 
-			float s = (float)crossProduct(q, vs2) / crossProduct(vs1, vs2);
-			float t = (float)crossProduct(vs1, q) / crossProduct(vs1, vs2);
+		float tmp = crossProduct(vs1, vs2);
+		float s = crossProduct(q, vs2) / tmp;
+		float t = crossProduct(vs1, q) / tmp;
 
-			vec2d dist = origin - vec2d(x, y);
+		vec2d dist = origin - vec2d(x, y);
 
-			if ((s >= 0) && (t >= 0) && (s + t <= 1) && dist.get_length() < distance)
-				viewed.push_back(&chunks[x][y]);
-	  	}
-	}
-
-	// Needs to be optimized (Maybe push back trinagle pos and remove this).
-	for (int i = 0; i < 9; i++) {
-	    Chunk* neighbor = chunks[static_cast<int>(origin.x)][static_cast<int>(origin.y)].neighbors[i];
-	    auto it = std::find(viewed.begin(), viewed.end(), neighbor);
-	    if (neighbor != NULL && it != viewed.end())
-	        viewed.push_back(neighbor);
-	}
+		if ((s >= 0) && (t >= 0) && (s + t <= 1) && dist.get_length() < distance)
+			viewed.push_back(&chunks[x][y]);
+  	}
 
 	return viewed;
 }
