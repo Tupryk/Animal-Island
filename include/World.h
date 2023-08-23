@@ -15,6 +15,9 @@
 #include "beings/Player.h"
 #include "visuals/Chunks.h"
 
+#define GENERATE_ANIMALS 0
+#define GENERATE_PEOPLE 0
+#define DAYTIME 1 // -1: loops, 0: night, 1: daytime
 #define KEEP_STATS 0
 #define DEBUG 0
 

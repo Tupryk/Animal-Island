@@ -76,7 +76,7 @@ World::World() : player(vec2d(2000, 3232))
 		else chunks[i][j].neighbors[8] = NULL;
 	}}
 
-	// Generate animals
+	#if GENERATE_ANIMALS
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
 	{
@@ -94,6 +94,10 @@ World::World() : player(vec2d(2000, 3232))
     			std::shared_ptr<Squirrel> squirrel = std::make_shared<Squirrel>(vec2d(pos_x, pos_y));
     			animals.push_back(squirrel);
     		}}}}
+    #endif
+
+    #if GENERATE_PEOPLE
+    #endif
 }
 
 std::shared_ptr<Animal> World::createAnimalCopy(const std::shared_ptr<Animal>& animal) {
@@ -132,7 +136,13 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 void World::update()
 {
 	// Update Day Year Cycle
-	update_time();
+	#if DAYTIME == -1
+		update_time();
+	#elif DAYTIME == 0
+		brightness = .2;
+	#elif DAYTIME == 1
+		brightness = 1;
+	#endif
 
 	// Update Player
 	player.update_pos();
@@ -228,9 +238,7 @@ void World::draw_world(SDL_Renderer* renderer)
 		for (int i = -.5*(render_width-1)+render_offset_x; i <= render_width*.5+render_offset_x; i++)
 		{
 			float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
-			// float brightness = sun_angle;
-			// if (sun_angle < .2) brightness = .2;
-			float gradient = gradientx*gradienty; //*brightness;
+			float gradient = gradientx*gradienty;
 
 			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
 			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
@@ -296,9 +304,7 @@ void World::draw_world(SDL_Renderer* renderer)
 				float visual_size = ((start-end)*tz).get_length();
 
 				float gradientx = (.2-(abs(i/(render_width*.5))*.2)+.8);
-				float brightness = sun_angle;
-				if (sun_angle < .2) brightness = .2;
-				float gradient = gradientx*gradienty*brightness;
+				float gradient = gradientx*gradienty;
 
 				tree->visual.setScale(visual_size);
 				tree->visual.setPos(vec2d(ScreenCenterX+tx*tz, ScreenCenterY+ty*tz));

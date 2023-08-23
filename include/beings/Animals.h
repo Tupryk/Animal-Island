@@ -17,6 +17,7 @@ class Tree;
 
 struct Animal : RigidBody
 {
+	// Create a memory vector
 	float max_speed = 1;
 
 	unsigned int cycle_counter = 0;
