@@ -13,6 +13,7 @@ class Person : public Animal
 public:
 	std::shared_ptr<House> in_house = nullptr;
 	std::shared_ptr<House> home = nullptr;
+	std::shared_ptr<House> work = nullptr;
 	Person(vec2d pos);
 };
 
@@ -23,6 +24,7 @@ struct Relation
 	float attraction = 0;
 	float friendship = 0;
 	float love_interest = 0;
+	float hate = 0;
 
 	Relation(std::shared_ptr<Person> to);
 };

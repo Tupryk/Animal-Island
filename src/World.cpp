@@ -42,8 +42,11 @@ World::World() : player(vec2d(2000, 3232))
 		else
 			chunks[i][j] = Chunk(ChunkTypes::SEA, coor);
 		}}
-	std::shared_ptr<House> house = std::make_shared<House>(chunks[35][50].coor);
-	chunks[35][50].structures.push_back(house);
+	std::shared_ptr<House> house0 = std::make_shared<House>(chunks[35][50].coor);
+	chunks[35][50].structures.push_back(house0);
+
+	std::shared_ptr<House> house1 = std::make_shared<House>(chunks[30][50].coor);
+	chunks[30][50].structures.push_back(house1);
 
 	// Setup chunk neighbors
 	for (int i = 0; i < dimensions; i++) {
@@ -316,13 +319,63 @@ void World::draw_world(SDL_Renderer* renderer)
 				float ty = house->pos.y-player.pos.y;
 				float tz = getZfromY(ty, ScreenCenterY*2);
 
-				float size = 100;
+				float size = 25;
 				vec2d start(tx-size*.5, ty);
 				vec2d end(tx+size*.5, ty);
 				float visual_size = ((start-end)*tz).get_length();
 
-				SDL_SetRenderDrawColor(renderer, 255, 128, 128, 255);
-				SDL_RenderFillCircle(renderer, ScreenCenterX+tx*tz, ScreenCenterY+ty*tz, visual_size);
+				float bty = house->pos.y-player.pos.y-size;
+				float btz = getZfromY(bty, ScreenCenterY*2);
+				{
+			    	Sint16 vertsx[4] = {
+			    		static_cast<Sint16>(ScreenCenterX+(tx-visual_size*.5)*tz),
+			    		static_cast<Sint16>(ScreenCenterX+(tx+visual_size*.5)*tz),
+			    		static_cast<Sint16>(ScreenCenterX+(tx+visual_size*.5)*btz),
+			    		static_cast<Sint16>(ScreenCenterX+(tx-visual_size*.5)*btz)};
+				    Sint16 vertsy[4] = {
+				    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
+				    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
+				    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
+				    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz)};
+
+				    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 160, 80, 80, 255);
+				}
+
+				SDL_Rect rect;
+			    rect.x = ScreenCenterX+(tx-visual_size*.5)*tz;
+			    rect.y = ScreenCenterY+(ty-visual_size)*tz;
+			    rect.w = visual_size*tz;
+			    rect.h = visual_size*tz;
+
+			    SDL_SetRenderDrawColor(renderer, 128, 64, 64, 255);
+			    SDL_RenderFillRect(renderer, &rect);
+
+			    if (rect.x != 0) {
+			    	if (rect.x > ScreenCenterX) {
+			    		Sint16 ftx = ScreenCenterX+(tx-visual_size*.5)*tz;
+				    	Sint16 btx = ScreenCenterX+(tx-visual_size*.5)*btz;
+				    	Sint16 vertsx[4] = { ftx, ftx, btx, btx };
+					    Sint16 vertsy[4] = {
+					    	static_cast<Sint16>(ScreenCenterY+ty*tz),
+					    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
+					    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
+					    	static_cast<Sint16>(ScreenCenterY+bty*btz)};
+
+					    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 96, 48, 48, 255);
+				    }
+				    else if (rect.x < ScreenCenterX) {
+				    	Sint16 ftx = ScreenCenterX+(tx+visual_size*.5)*tz;
+				    	Sint16 btx = ScreenCenterX+(tx+visual_size*.5)*btz;
+				    	Sint16 vertsx[4] = { ftx, ftx, btx, btx };
+					    Sint16 vertsy[4] = {
+					    	static_cast<Sint16>(ScreenCenterY+ty*tz),
+					    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
+					    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
+					    	static_cast<Sint16>(ScreenCenterY+bty*btz)};
+
+					    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 96, 48, 48, 255);
+				    }
+			    }
 			}
 		}
 		if (j == 0) {

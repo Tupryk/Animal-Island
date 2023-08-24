@@ -12,6 +12,11 @@ enum ChunkTypes { GRASS, VALLEY, SEA, SAND };
 struct Animal;
 class Tree;
 
+struct Path {
+	vec2d start;
+	vec2d end;
+};
+
 struct Chunk
 {
 	ChunkTypes type;
@@ -22,6 +27,7 @@ struct Chunk
 	std::vector<std::shared_ptr<Tree>> trees; // Trees are stored in chunks because they dont move so it makes it more simple to not have to update their positions
 	std::vector<std::shared_ptr<Animal>> animals;
 	std::vector<std::shared_ptr<House>> structures;
+	std::vector<Path> paths;
 
 	Chunk(ChunkTypes type = ChunkTypes::SEA, vec2d coor = {0, 0});
 	void update();
