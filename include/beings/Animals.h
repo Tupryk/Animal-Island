@@ -58,8 +58,8 @@ struct Animal : RigidBody
 	AnimalState update_basic();
 	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 	virtual ~Animal() = default;
-	std::shared_ptr<StaticBody> getClosest(std::vector<std::shared_ptr<StaticBody>> bodies);
 	virtual std::shared_ptr<Animal> build_child();
+	bool goTo(std::shared_ptr<StaticBody> target);
 };
 
 class Squirrel : public Animal

@@ -45,6 +45,8 @@ void App::run()
 	              	else if (event.key.keysym.sym == SDLK_q) {
 	              		world.display_stats = false;
 	              		world.big_map = false;
+	              	} else if (event.key.keysym.sym == SDLK_e) {
+	              		world.interact = true;
 	              	}
 	              	else {
 	              		if (event.key.keysym.sym != SDLK_d && event.key.keysym.sym != SDLK_a)
@@ -67,6 +69,7 @@ void App::run()
 				} else {
 					world.player.acc.x = 0;
 					world.player.acc.y = 0;
+					world.interact = false;
 				}
 			}
 

@@ -39,6 +39,15 @@ AnimalState Animal::update_basic()
 	return AnimalState::DEFAULT;
 }
 
+bool Animal::goTo(std::shared_ptr<StaticBody> target)
+{
+	vec2d targetDir(target->pos.x - pos.x, target->pos.y - pos.y);
+	bool reached_target = targetDir.get_length() < reach;
+	if (reached_target) acc = vec2d(0, 0);
+	else acc = targetDir.norm() * max_speed;
+	return reached_target;
+}
+
 void Animal::wander()
 {
 	// Random walking
@@ -94,16 +103,6 @@ AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>>
 	}
 	else wander();
 	return update_basic();
-}
-
-std::shared_ptr<StaticBody> Animal::getClosest(std::vector<std::shared_ptr<StaticBody>> bodies)
-{
-	if (bodies.empty()) return nullptr;
-	auto closestIt = std::min_element(bodies.begin(), bodies.end(), [&](const std::shared_ptr<StaticBody>& a, const std::shared_ptr<StaticBody>& b) {
-	    return (a->pos - pos).get_length_squared() < (b->pos - pos).get_length_squared();
-	});
-	std::shared_ptr<StaticBody> closest = *closestIt;
-	return closest;
 }
 
 Squirrel::Squirrel(vec2d pos) : Animal() {

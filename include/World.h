@@ -17,9 +17,10 @@
 
 #define GENERATE_ANIMALS 0
 #define GENERATE_PEOPLE 0
-#define DAYTIME 1 // -1: loops, 0: night, 1: daytime
+#define DAYTIME -1 // -1: loops, 0: night, 1: daytime
 #define KEEP_STATS 0
-#define DEBUG 0
+#define SHOW_ANIMAL_VISION 0
+#define SHOW_GRID 0
 
 class World
 {
@@ -36,6 +37,7 @@ class World
 
 	// Shared ptr for different animal types
 	std::vector<std::shared_ptr<Animal>> animals;
+	std::vector<std::shared_ptr<Person>> people;
 	std::mutex updated_animals_mutex;
 
 	// Statictics
@@ -55,6 +57,8 @@ class World
 	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
 
 public:
+	// Will be removed once a good keyboard interface is implemented
+	bool interact = false;
 	bool display_stats = false;
 	bool big_map = false;
 	Player player;

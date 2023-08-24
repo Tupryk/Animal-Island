@@ -1,12 +1,17 @@
 #pragma once
 
+#include <memory>
+
 #include "Physics.h"
 #include "terrain/Structures.h"
+#include "beings/People.h"
 
 class House;
 
 class Player : public RigidBody
 {
+	std::vector<Relation> relations;
+
 public:
 	std::shared_ptr<House> in_house = nullptr;
 	float speed = 10;

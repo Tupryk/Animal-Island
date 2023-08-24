@@ -48,6 +48,11 @@ World::World() : player(vec2d(2000, 3232))
 	std::shared_ptr<House> house1 = std::make_shared<House>(chunks[30][50].coor);
 	chunks[30][50].structures.push_back(house1);
 
+	std::shared_ptr<Person> person = std::make_shared<Person>(chunks[35][50].coor);
+	person->home = house0;
+	person->work = house1;
+	people.push_back(person);
+
 	// Setup chunk neighbors
 	for (int i = 0; i < dimensions; i++) {
 	for (int j = 0; j < dimensions; j++)
@@ -149,6 +154,24 @@ void World::update()
 
 	// Update Player
 	player.update_pos();
+	if (!player.in_house) {
+		std::vector<std::shared_ptr<StaticBody>> interactibles;
+		unsigned int ccx = player.pos.x / static_cast<float>(chunk_size);
+		unsigned int ccy = player.pos.y / static_cast<float>(chunk_size);
+		for (int i = 0; i < 9; i++)
+			interactibles.insert(interactibles.end(), chunks[ccx][ccy].neighbors[i]->structures.begin(), chunks[ccx][ccy].neighbors[i]->structures.end());
+
+		std::shared_ptr<House> interactible = nullptr;
+		if (!interactibles.empty()) {
+			interactible = std::dynamic_pointer_cast<House>(player.getClosest(interactibles));
+			if ((interactible->pos - player.pos).get_length() > 40) interactible = nullptr;
+		}
+
+		if (interactible && interact) {
+			player.enterHouse(interactible);
+			interact = false;
+		}
+	}
 
 	// Update Animals
 	std::vector<std::shared_ptr<Animal>> updated_animals;
@@ -184,6 +207,9 @@ void World::update()
 		unsigned int cy = animal_ptr->pos.y / static_cast<float>(chunk_size);
 		chunks[cx][cy].animals.push_back(animal_ptr);
 	}
+
+	// Update People
+	for (auto person : people) person->updatePers(brightness);
 
 	// Store World data
 	#if KEEP_STATS
@@ -286,7 +312,7 @@ void World::draw_world(SDL_Renderer* renderer)
 
 			else filledPolygonRGBA(renderer, vertsx, vertsy, 4, 255*gradient, 192*gradient, 203*gradient, 255);
 
-			#if DEBUG
+			#if SHOW_GRID
 				SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
 				SDL_RenderDrawLine(renderer, p0.x, p0.y, p1.x, p1.y);
 				SDL_RenderDrawLine(renderer, p1.x, p1.y, p2.x, p2.y);
@@ -315,11 +341,12 @@ void World::draw_world(SDL_Renderer* renderer)
 			}
 			for (auto house : chunks[pcx+i][pcy+j].structures)
 			{
-				float tx = house->pos.x-player.pos.x;
+				float size = 25;
+
+				float tx = house->pos.x-player.pos.x-size;
 				float ty = house->pos.y-player.pos.y;
 				float tz = getZfromY(ty, ScreenCenterY*2);
 
-				float size = 25;
 				vec2d start(tx-size*.5, ty);
 				vec2d end(tx+size*.5, ty);
 				float visual_size = ((start-end)*tz).get_length();
@@ -413,6 +440,24 @@ void World::draw_world(SDL_Renderer* renderer)
 	        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
 	    }
     }
+
+    for (auto person : people)
+    {
+    	if (!person->in_house) {
+	    	float x = person->pos.x - player.pos.x;
+	        float y = person->pos.y - player.pos.y;
+
+	        if (abs(x) < ScreenCenterX && abs(y) < ScreenCenterY*.5) {
+	        	float z = getZfromY(y, ScreenCenterY*2);
+
+	        	float size = 10;
+				vec2d start(x-size*.5, y);
+				vec2d end(x+size*.5, y);
+				float visual_size = ((start-end)*z).get_length();
+
+		        SDL_SetRenderDrawColor(renderer, 255, 200, 200, 255);
+		        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
+	}}}
 }
 
 void World::update_stats() {
@@ -473,9 +518,13 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 		height = 210/dimensions;
 	}
 
-	#if DEBUG
-		std::shared_ptr<Animal> animal = animals.front();
-		std::vector<Chunk*> viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
+	#if SHOW_ANIMAL_VISION
+		std::shared_ptr<Animal> animal = nullptr;
+		std::vector<Chunk*> viewed;
+		if (!animals.empty()) {
+			animal = animals.front();
+			viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
+		}
 	#endif
 
 	for (int i = 0; i < dimensions; i++) {
@@ -487,7 +536,7 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
-    	#if DEBUG
+    	#if SHOW_ANIMAL_VISION
     		auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
     		if (it != viewed.end())
     			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);

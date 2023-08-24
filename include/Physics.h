@@ -6,7 +6,9 @@ struct StaticBody
 {
 	vec2d pos;
 	vec2d size;
+	
 	virtual ~StaticBody() = default;
+	std::shared_ptr<StaticBody> getClosest(std::vector<std::shared_ptr<StaticBody>> bodies);
 };
 
 struct RigidBody : public StaticBody
