@@ -9,6 +9,7 @@ class House : public StaticBody
 	std::vector<std::shared_ptr<StaticBody>> bodies_inside;
 
 public:
+	vec2d inner_size;
 	vec2d exit_door;
 
 	House(vec2d pos);

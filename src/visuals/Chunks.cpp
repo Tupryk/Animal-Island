@@ -57,7 +57,7 @@ void WaterVisual::draw(SDL_Renderer* renderer)
             float angle = (normz/sqrt(normx*normx+normy*normy+normz*normz)+1)/2;
 
             for (int k = 0; k < 3; k++) {
-				float vz = getZfromY(vertsy[k], ScreenCenterY*2);
+				float vz = getZfromYcurberd(vertsy[k], ScreenCenterY*2);
 				vertsx[k] *= vz;
 				vertsy[k] *= vz;
 				vertsx[k] += ScreenCenterX;
@@ -92,7 +92,7 @@ void WaterVisual::draw(SDL_Renderer* renderer)
             angle = (normz/sqrt(normx*normx+normy*normy+normz*normz)+1)/2;
 
             for (int k = 0; k < 3; k++) {
-				float vz = getZfromY(vertsy[k], ScreenCenterY*2);
+				float vz = getZfromYcurberd(vertsy[k], ScreenCenterY*2);
 				vertsx[k] *= vz;
 				vertsy[k] *= vz;
 				vertsx[k] += ScreenCenterX;

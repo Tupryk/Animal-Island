@@ -154,6 +154,16 @@ void World::update()
 
 	// Update Player
 	player.update_pos();
+	if (player.in_house) {
+		if (player.pos.x > player.in_house->inner_size.x)
+			player.pos.x = player.in_house->inner_size.x;
+		if (player.pos.y > player.in_house->inner_size.y)
+			player.pos.y = player.in_house->inner_size.y;
+		if (player.pos.x < 0)
+			player.pos.x = 0;
+		if (player.pos.y < 0)
+			player.pos.y = 0;
+	}
 	if (!player.in_house) {
 		std::vector<std::shared_ptr<StaticBody>> interactibles;
 		unsigned int ccx = player.pos.x / static_cast<float>(chunk_size);
@@ -212,7 +222,19 @@ void World::update()
 	}
 
 	// Update People
-	for (auto person : people) person->updatePers(brightness);
+	for (auto person : people) {
+		person->updatePers(brightness);
+		if (person->in_house) {
+			if (person->pos.x > person->in_house->inner_size.x)
+				person->pos.x = person->in_house->inner_size.x;
+			if (person->pos.y > person->in_house->inner_size.y)
+				person->pos.y = person->in_house->inner_size.y;
+			if (person->pos.x < 0)
+				person->pos.x = 0;
+			if (person->pos.y < 0)
+				person->pos.y = 0;
+		}
+	}
 
 	// Store World data
 	#if KEEP_STATS
@@ -274,7 +296,7 @@ void World::draw_world(SDL_Renderer* renderer)
 
 			float ox = chunks[pcx+i][pcy+j].coor.x-player.pos.x;
 			float oy = chunks[pcx+i][pcy+j].coor.y-player.pos.y;
-			float z = getZfromY(oy, ScreenCenterY*2);
+			float z = getZfromYcurberd(oy, ScreenCenterY*2);
 
 			float x = ox;
 			float y = oy;
@@ -283,7 +305,7 @@ void World::draw_world(SDL_Renderer* renderer)
 			vec2d p1(ScreenCenterX+(x+chunk_size)*z, ScreenCenterY+y*z);
 
 			y += chunk_size;
-			z = getZfromY(y, ScreenCenterY*2);
+			z = getZfromYcurberd(y, ScreenCenterY*2);
 			vec2d p2(ScreenCenterX+(x+chunk_size)*z, ScreenCenterY+y*z);
 			vec2d p3(ScreenCenterX+x*z, ScreenCenterY+y*z);
 
@@ -328,7 +350,7 @@ void World::draw_world(SDL_Renderer* renderer)
 			{
 				float tx = tree->pos.x-player.pos.x;
 				float ty = tree->pos.y-player.pos.y;
-				float tz = getZfromY(ty, ScreenCenterY*2);
+				float tz = getZfromYcurberd(ty, ScreenCenterY*2);
 
 				float size = 50;
 				vec2d start(tx-size*.5, ty);
@@ -348,14 +370,14 @@ void World::draw_world(SDL_Renderer* renderer)
 
 				float tx = house->pos.x-player.pos.x-size;
 				float ty = house->pos.y-player.pos.y;
-				float tz = getZfromY(ty, ScreenCenterY*2);
+				float tz = getZfromYcurberd(ty, ScreenCenterY*2);
 
 				vec2d start(tx-size*.5, ty);
 				vec2d end(tx+size*.5, ty);
 				float visual_size = ((start-end)*tz).get_length();
 
 				float bty = house->pos.y-player.pos.y-size;
-				float btz = getZfromY(bty, ScreenCenterY*2);
+				float btz = getZfromYcurberd(bty, ScreenCenterY*2);
 				{
 			    	Sint16 vertsx[4] = {
 			    		static_cast<Sint16>(ScreenCenterX+(tx-visual_size*.5)*tz),
@@ -422,7 +444,7 @@ void World::draw_world(SDL_Renderer* renderer)
         float y = animal->pos.y - player.pos.y;
 
         if (abs(x) < ScreenCenterX && abs(y) < ScreenCenterY*.5) {
-        	float z = getZfromY(y, ScreenCenterY*2);
+        	float z = getZfromYcurberd(y, ScreenCenterY*2);
 
         	float size = 10;
 			vec2d start(x-size*.5, y);
@@ -451,7 +473,7 @@ void World::draw_world(SDL_Renderer* renderer)
 	        float y = person->pos.y - player.pos.y;
 
 	        if (abs(x) < ScreenCenterX && abs(y) < ScreenCenterY*.5) {
-	        	float z = getZfromY(y, ScreenCenterY*2);
+	        	float z = getZfromYcurberd(y, ScreenCenterY*2);
 
 	        	float size = 10;
 				vec2d start(x-size*.5, y);
