@@ -9,7 +9,7 @@ void Player::interact(std::shared_ptr<StaticBody> obj)
 
 void Player::enterHouse(std::shared_ptr<House> house) {
 	in_house = house;
-	pos = house->exit;
+	pos = house->exit_door;
 }
 
 void Player::exitHouse() {

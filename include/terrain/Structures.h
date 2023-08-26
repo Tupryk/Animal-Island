@@ -6,9 +6,13 @@
 
 class House : public StaticBody
 {
+	std::vector<std::shared_ptr<StaticBody>> bodies_inside;
+
 public:
-	vec2d exit;
+	vec2d exit_door;
 
 	House(vec2d pos);
-	HouseVisual visual;
+	void enter(std::shared_ptr<StaticBody> body);
+	void exit(std::shared_ptr<StaticBody> body);
+	void draw_inside(SDL_Renderer* renderer, vec2d origin);
 };

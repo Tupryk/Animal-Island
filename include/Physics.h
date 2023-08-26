@@ -2,7 +2,7 @@
 
 #include "utils.h"
 
-struct StaticBody
+struct StaticBody : public std::enable_shared_from_this<StaticBody>
 {
 	vec2d pos;
 	vec2d size;

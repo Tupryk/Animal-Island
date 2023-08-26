@@ -60,6 +60,7 @@ struct Animal : RigidBody
 	virtual ~Animal() = default;
 	virtual std::shared_ptr<Animal> build_child();
 	bool goTo(std::shared_ptr<StaticBody> target);
+	bool goTo(vec2d target);
 };
 
 class Squirrel : public Animal

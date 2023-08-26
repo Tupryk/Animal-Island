@@ -171,6 +171,9 @@ void World::update()
 			player.enterHouse(interactible);
 			interact = false;
 		}
+	} else if (interact && (player.pos-player.in_house->exit_door).get_length() < 30) {
+		player.exitHouse();
+		interact = false;
 	}
 
 	// Update Animals
@@ -237,7 +240,7 @@ void World::draw(SDL_Renderer* renderer)
     	return; }
 
     if (player.in_house)
-    	player.in_house->visual.draw_inside(renderer, player.pos);
+    	player.in_house->draw_inside(renderer, player.pos);
     else draw_world(renderer);
 
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);

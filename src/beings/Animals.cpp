@@ -48,6 +48,15 @@ bool Animal::goTo(std::shared_ptr<StaticBody> target)
 	return reached_target;
 }
 
+bool Animal::goTo(vec2d target)
+{
+	vec2d targetDir(target.x - pos.x, target.y - pos.y);
+	bool reached_target = targetDir.get_length() < reach;
+	if (reached_target) acc = vec2d(0, 0);
+	else acc = targetDir.norm() * max_speed;
+	return reached_target;
+}
+
 void Animal::wander()
 {
 	// Random walking

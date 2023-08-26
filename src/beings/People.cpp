@@ -10,16 +10,28 @@ Person::Person(vec2d pos) : Animal() {
 
 void Person::updatePers(float brightness)
 {
-	if (brightness <= .3 && goTo(home)) {
-		in_house = home;
+	if (brightness <= .3 && in_house != home)
+	{
+		if (in_house != nullptr && goTo(in_house->exit_door)) {
+			pos = in_house->pos;
+			in_house = nullptr;
+		} else if (in_house == nullptr && goTo(home)) {
+			home->enter(shared_from_this());
+			in_house = home;
+			pos = in_house->exit_door;
+		}
 	}
-	else if (brightness >= .5 && goTo(work)) {
-		in_house = work;
-	}
-	else {
-		in_house = nullptr;
-		wander();
-	}
+	else if (brightness >= .5 && in_house != work)
+	{
+		if (in_house != nullptr && goTo(in_house->exit_door)) {
+			pos = in_house->pos;
+			in_house = nullptr;
+		} else if (in_house == nullptr && goTo(work)) {
+			work->enter(shared_from_this());
+			in_house = work;
+			pos = in_house->exit_door;
+		}
+	} else wander();
 
 	if (in_house == work) money++;
 	update_pos();
