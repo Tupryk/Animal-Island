@@ -137,12 +137,15 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 	std::vector<std::shared_ptr<Tree>> plants_viewed;
 
 	// Get chunks viewed needs to be updated for inside houses
-	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->look_dir);
+	std::vector<Chunk*> chunks_viewed = get_chunks_viewed_circle(animal->see_distance, animal->pos);
 	if (!animal->in_house) {
 		for (auto chunk : chunks_viewed) {
 		    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
 		    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
 		}
+	} else {
+		for (auto body : animal->in_house->bodies_inside)
+			animals_viewed.push_back(std::dynamic_pointer_cast<Animal>(body));
 	}
 
 	AnimalState status = animal->update(chunks[cx][cy].neighbors, animals_viewed, plants_viewed, brightness);
@@ -213,28 +216,13 @@ void World::update()
 	}
 
 	// Update Animals
-	std::vector<std::shared_ptr<Animal>> updated_animals;
-	std::vector<std::thread> threads;
-	for (int i = 0; i < animals.size(); i++) {
-	    threads.emplace_back([this, &updated_animals, i]()
-	    {
-	    	std::shared_ptr<Animal> anim_copy = createAnimalCopy(animals[i]);
-            AnimalState status = update_animal(anim_copy);
-            if (status != AnimalState::DEAD) {
-                std::lock_guard<std::mutex> lock(updated_animals_mutex);
-                updated_animals.push_back(anim_copy);
-                if (status == AnimalState::HAD_CHILD)
-                	updated_animals.push_back(anim_copy->build_child());
-            }
-        });
+	for (int i = animals.size()-1; i >= 0; i--) {
+        AnimalState status = update_animal(animals[i]);
+        if (status == AnimalState::DEAD)
+        	animals.erase(animals.begin() + i);
+        else if (status == AnimalState::HAD_CHILD)
+            animals.push_back(animals[i]->build_child());
 	}
-
-	for (std::thread& thread : threads)
-	    thread.join();
-
-	animals.clear();
-	for (const auto& updated_animal : updated_animals)
-	    animals.push_back(updated_animal);
     
     // Update Chunks
     for (int i = 0; i < dimensions; i++)
@@ -549,12 +537,11 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 	}
 
 	#if SHOW_ANIMAL_VISION
-		std::shared_ptr<Animal> animal = nullptr;
 		std::vector<Chunk*> viewed;
-		if (!animals.empty()) {
-			animal = animals.front();
-			viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->acc);
-		}
+		for (auto anim : animals)
+			if (!anim->in_house) {
+				viewed = get_chunks_viewed_circle(anim->see_distance, anim->pos);
+				break; }
 	#endif
 
 	for (int i = 0; i < dimensions; i++) {
@@ -566,12 +553,6 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 	    rect.w = width;
 	    rect.h = height;
 
-    	#if SHOW_ANIMAL_VISION
-    		auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
-    		if (it != viewed.end())
-    			SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-	    else
-	    #endif
 	    if (chunks[i][j].type == ChunkTypes::SEA)
 			SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 
@@ -585,6 +566,14 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 			SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
 
 		else SDL_SetRenderDrawColor(renderer, 255, 192, 203, 255);
+
+		#if SHOW_ANIMAL_VISION
+    		if (!viewed.empty()) {
+    			auto it = std::find(viewed.begin(), viewed.end(), &chunks[i][j]);
+    			if (it != viewed.end())
+    				SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    		}
+	    #endif
 
 		SDL_RenderFillRect(renderer, &rect);
 
@@ -614,9 +603,9 @@ void World::draw_mini_map(SDL_Renderer* renderer)
     }
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     if (player.in_house)
-    	SDL_RenderFillCircle(renderer, player.in_house->pos.x * width / chunk_size, player.in_house->pos.y * height / chunk_size, 10);
+    	SDL_RenderFillCircle(renderer, player.in_house->pos.x * width / chunk_size, player.in_house->pos.y * height / chunk_size, 5);
    	else
-    	SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 10);
+    	SDL_RenderFillCircle(renderer, player.pos.x * width / chunk_size, player.pos.y * height / chunk_size, 5);
 }
 
 Chunk* World::pos2chunk(vec2d pos) {
@@ -625,8 +614,8 @@ Chunk* World::pos2chunk(vec2d pos) {
 		[static_cast<int>(pos.y / static_cast<float>(chunk_size))];
 }
 
-// Doesn't quite work
-std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir)
+// Doesn't quite work yet
+std::vector<Chunk*> World::get_chunks_viewed_cone(float fov, float distance, vec2d pos, vec2d dir)
 {
 	std::vector<Chunk*> viewed;
 	vec2d origin(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
@@ -667,6 +656,22 @@ std::vector<Chunk*> World::get_chunks_viewed(float fov, float distance, vec2d po
 		vec2d dist = origin - vec2d(x, y);
 
 		if ((s >= 0) && (t >= 0) && (s + t <= 1) && dist.get_length() < distance)
+			viewed.push_back(&chunks[x][y]);
+  	}
+
+	return viewed;
+}
+
+std::vector<Chunk*> World::get_chunks_viewed_circle(float distance, vec2d pos)
+{
+	std::vector<Chunk*> viewed;
+	vec2d origin(pos.x / static_cast<float>(chunk_size), pos.y / static_cast<float>(chunk_size));
+
+	for (int x = origin.x-distance; x <= origin.x+distance; x++)
+	for (int y = origin.y-distance; y <= origin.y+distance; y++)
+	{
+		float dist = (vec2d(x, y) - origin).get_length();
+		if (dist <= distance)
 			viewed.push_back(&chunks[x][y]);
   	}
 

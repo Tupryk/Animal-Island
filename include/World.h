@@ -19,7 +19,7 @@
 #define GENERATE_PEOPLE 1
 #define DAYTIME -1 // -1: loops, 0: night, 1: daytime
 #define KEEP_STATS 0
-#define SHOW_ANIMAL_VISION 0
+#define SHOW_ANIMAL_VISION 1
 #define SHOW_GRID 0
 
 class World
@@ -53,7 +53,8 @@ class World
 	AnimalState update_animal(const std::shared_ptr<Animal>& animal);
 	std::shared_ptr<Animal> createAnimalCopy(const std::shared_ptr<Animal>& animal);
 	Chunk* pos2chunk(vec2d pos);
-	std::vector<Chunk*> get_chunks_viewed(float fov, float distance, vec2d pos, vec2d dir);
+	std::vector<Chunk*> get_chunks_viewed_cone(float fov, float distance, vec2d pos, vec2d dir);
+	std::vector<Chunk*> get_chunks_viewed_circle(float distance, vec2d pos);
 
 public:
 	// Will be removed once a good keyboard interface is implemented
