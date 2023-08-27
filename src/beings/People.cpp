@@ -16,6 +16,9 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 		if (brightness > .3) {
 			sleeping = false;
 			day++;
+			conversation_tokens = 5*social*.01;
+			talked_to.clear();
+			talkative = (rand()%100 < social);
 		}
 		else return AnimalState::DEFAULT;
 	} else if (brightness < .3 && in_house == home) {
@@ -62,10 +65,10 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 					pos = in_house->pos;
 					in_house = nullptr;
 				}
-			} else {
+			} else if (talkative && conversation_tokens > 0) {
 				std::vector<std::shared_ptr<StaticBody>> candidates;
 				for (auto animal : animals)
-					if (std::dynamic_pointer_cast<Person>(animal))
+					if (std::dynamic_pointer_cast<Person>(animal) && std::find(talked_to.begin(), talked_to.end(), animal) == talked_to.end())
 						candidates.push_back(animal);
 
 				if (!candidates.empty()) {
@@ -74,10 +77,11 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 					if (goTo(target)) {
 						talking = target;
 						send_message(target, "hello");
+						talked_to.push_back(target);
 					}
 				}
 				else wander();
-			}
+			} else wander();
 		}
 	} else if (talking)
 		process_inbox(true);
@@ -105,6 +109,8 @@ void Person::process_inbox(bool end_all)
 				send_message(talking, "bye");
 				// std::cout << shared_from_this() << " responded: " << "bye" << std::endl;
 				talking = nullptr;
+				conversation_tokens--;
+				talkative = (rand()%100 < social);
 			} else {
 				talking->send_message(talking, "blah");
 				// std::cout << shared_from_this() << " responded: " << "blah" << std::endl;

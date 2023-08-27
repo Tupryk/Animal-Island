@@ -63,6 +63,7 @@ public:
 	bool interact = false;
 	bool display_stats = false;
 	bool big_map = false;
+	
 	Player player;
 
 	World();

@@ -68,6 +68,15 @@ struct Animal : RigidBody
 	bool goTo(vec2d target);
 };
 
+enum MemoryBlockType {  };
+
+struct AnimalMemoryBlock
+{
+	vec2d last_pos;
+	std::shared_ptr<StaticBody> body;
+	MemoryBlockType type;
+};
+
 class Squirrel : public Animal
 {
 public:

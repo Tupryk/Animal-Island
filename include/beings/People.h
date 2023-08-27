@@ -13,10 +13,13 @@ class Person : public Animal
 	std::vector<Relation> relations;
 	std::vector<Message> inbox;
 	float money = 0;
-	unsigned int social = 99; // From 0% to 100%, how likely is it that person will start or end a conversation.
+	unsigned int social = 50; // From 0% to 100%, how likely is it that person will start or end a conversation.
 	unsigned int day = 0; // 0 to 6. If this is 5 or 6, person will not go to work.
 	std::shared_ptr<Person> talking = nullptr;
 	bool sleeping = true;
+	unsigned int conversation_tokens = 5*social*.01; // How many times per day can a person start a conversation. (max 5)
+	std::vector<std::shared_ptr<Animal>> talked_to;
+	bool talkative = true;
 
 public:
 	std::shared_ptr<House> home = nullptr;
