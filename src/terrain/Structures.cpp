@@ -14,8 +14,10 @@ void House::exit(std::shared_ptr<StaticBody> body)
 	    [body](const std::shared_ptr<StaticBody>& element) {
 	        return element == body;
 	    });
-    bodies_inside.erase(new_end, bodies_inside.end());
+   	bodies_inside.erase(new_end, bodies_inside.end());
 }
+
+void House::clear_bodies() { bodies_inside.clear(); }
 
 void House::draw_inside(SDL_Renderer* renderer, vec2d origin)
 {
@@ -55,6 +57,7 @@ void House::draw_inside(SDL_Renderer* renderer, vec2d origin)
 	SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
     SDL_RenderFillCircle(renderer, ScreenCenterX+x/z, ScreenCenterY+y/z, 10);
 
+    // Origin
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     SDL_RenderFillCircle(renderer, ScreenCenterX, ScreenCenterY, 10);
 

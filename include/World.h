@@ -16,7 +16,7 @@
 #include "visuals/Chunks.h"
 
 #define GENERATE_ANIMALS 0
-#define GENERATE_PEOPLE 0
+#define GENERATE_PEOPLE 1
 #define DAYTIME -1 // -1: loops, 0: night, 1: daytime
 #define KEEP_STATS 0
 #define SHOW_ANIMAL_VISION 0
@@ -37,7 +37,6 @@ class World
 
 	// Shared ptr for different animal types
 	std::vector<std::shared_ptr<Animal>> animals;
-	std::vector<std::shared_ptr<Person>> people;
 	std::mutex updated_animals_mutex;
 
 	// Statictics

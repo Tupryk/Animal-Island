@@ -7,8 +7,9 @@
 
 #include "utils.h"
 #include "Physics.h"
-#include "terrain/Chunks.h"
 #include "beings/Plants.h"
+#include "terrain/Chunks.h"
+#include "terrain/Structures.h"
 
 enum AnimalState { DEFAULT, HAD_CHILD, DEAD };
 
@@ -51,6 +52,8 @@ struct Animal : RigidBody
 	unsigned int over_population_thresh = 64; // If there are this many animals of the same species close to the animal it dies.
 
 	float reach = 10;
+
+	std::shared_ptr<House> in_house = nullptr;
 
 	float getHealth();
 	void hurt(float damage);

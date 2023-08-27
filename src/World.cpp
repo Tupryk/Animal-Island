@@ -42,16 +42,6 @@ World::World() : player(vec2d(2000, 3232))
 		else
 			chunks[i][j] = Chunk(ChunkTypes::SEA, coor);
 		}}
-	std::shared_ptr<House> house0 = std::make_shared<House>(chunks[35][50].coor);
-	chunks[35][50].structures.push_back(house0);
-
-	std::shared_ptr<House> house1 = std::make_shared<House>(chunks[30][50].coor);
-	chunks[30][50].structures.push_back(house1);
-
-	std::shared_ptr<Person> person = std::make_shared<Person>(chunks[35][50].coor);
-	person->home = house0;
-	person->work = house1;
-	people.push_back(person);
 
 	// Setup chunk neighbors
 	for (int i = 0; i < dimensions; i++) {
@@ -105,6 +95,24 @@ World::World() : player(vec2d(2000, 3232))
     #endif
 
     #if GENERATE_PEOPLE
+    	std::shared_ptr<House> house0 = std::make_shared<House>(chunks[35][50].coor);
+		chunks[35][50].structures.push_back(house0);
+
+		std::shared_ptr<House> house1 = std::make_shared<House>(chunks[30][50].coor);
+		chunks[30][50].structures.push_back(house1);
+
+		std::shared_ptr<Person> person0 = std::make_shared<Person>(chunks[35][50].coor);
+		person0->home = house0;
+		person0->work = house1;
+		animals.push_back(person0);
+
+		std::shared_ptr<House> house2 = std::make_shared<House>(chunks[32][47].coor);
+		chunks[32][47].structures.push_back(house2);
+
+		std::shared_ptr<Person> person1 = std::make_shared<Person>(chunks[35][50].coor);
+		person1->home = house2;
+		person1->work = house1;
+		animals.push_back(person1);
     #endif
 }
 
@@ -113,6 +121,8 @@ std::shared_ptr<Animal> World::createAnimalCopy(const std::shared_ptr<Animal>& a
         return std::make_shared<Cat>(*std::dynamic_pointer_cast<Cat>(animal));
     } else if (std::dynamic_pointer_cast<Squirrel>(animal)) {
         return std::make_shared<Squirrel>(*std::dynamic_pointer_cast<Squirrel>(animal));
+    } else if (std::dynamic_pointer_cast<Person>(animal)) {
+        return std::make_shared<Person>(*std::dynamic_pointer_cast<Person>(animal));
     } else {
         return std::make_shared<Animal>(*animal);
     }
@@ -125,18 +135,34 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 
 	std::vector<std::shared_ptr<Animal>> animals_viewed;
 	std::vector<std::shared_ptr<Tree>> plants_viewed;
+
+	// Get chunks viewed needs to be updated for inside houses
 	std::vector<Chunk*> chunks_viewed = get_chunks_viewed(animal->fov, animal->see_distance, animal->pos, animal->look_dir);
-	for (auto chunk : chunks_viewed) {
-	    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
-	    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
+	if (!animal->in_house) {
+		for (auto chunk : chunks_viewed) {
+		    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
+		    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
+		}
 	}
 
 	AnimalState status = animal->update(chunks[cx][cy].neighbors, animals_viewed, plants_viewed, brightness);
 
-	// Temporary code to avoid animals from going to the sea
-    unsigned int ncx = animal->pos.x / static_cast<float>(chunk_size);
-	unsigned int ncy = animal->pos.y / static_cast<float>(chunk_size);
-    if (chunks[ncx][ncy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);
+	// Temporary code to avoid animals from going to the sea and through walls
+    if (animal->in_house) {
+		if (animal->pos.x > animal->in_house->inner_size.x)
+			animal->pos.x = animal->in_house->inner_size.x;
+		if (animal->pos.y > animal->in_house->inner_size.y)
+			animal->pos.y = animal->in_house->inner_size.y;
+		if (animal->pos.x < 0)
+			animal->pos.x = 0;
+		if (animal->pos.y < 0)
+			animal->pos.y = 0;
+    }
+    else {
+    	cx = animal->pos.x / static_cast<float>(chunk_size);
+		cy = animal->pos.y / static_cast<float>(chunk_size);
+		if (chunks[cx][cy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);
+    }
 
     return status;
 }
@@ -212,28 +238,17 @@ void World::update()
     
     // Update Chunks
     for (int i = 0; i < dimensions; i++)
-		for (int j = 0; j < dimensions; j++)
+		for (int j = 0; j < dimensions; j++) {
 			chunks[i][j].animals.clear();
-
-	 for (auto animal_ptr : animals) {
-        unsigned int cx = animal_ptr->pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = animal_ptr->pos.y / static_cast<float>(chunk_size);
-		chunks[cx][cy].animals.push_back(animal_ptr);
-	}
-
-	// Update People
-	for (auto person : people) {
-		person->updatePers(brightness);
-		if (person->in_house) {
-			if (person->pos.x > person->in_house->inner_size.x)
-				person->pos.x = person->in_house->inner_size.x;
-			if (person->pos.y > person->in_house->inner_size.y)
-				person->pos.y = person->in_house->inner_size.y;
-			if (person->pos.x < 0)
-				person->pos.x = 0;
-			if (person->pos.y < 0)
-				person->pos.y = 0;
+			for (auto structure : chunks[i][j].structures)
+				structure->clear_bodies();
 		}
+
+	 for (auto animal : animals) {
+        unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
+		unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
+		chunks[cx][cy].animals.push_back(animal);
+		if (animal->in_house) animal->in_house->enter(animal);
 	}
 
 	// Store World data
@@ -450,39 +465,29 @@ void World::draw_world(SDL_Renderer* renderer)
 			vec2d start(x-size*.5, y);
 			vec2d end(x+size*.5, y);
 			float visual_size = ((start-end)*z).get_length();
-
-	        if (std::dynamic_pointer_cast<Cat>(animal))
+			
+	        if (std::dynamic_pointer_cast<Cat>(animal)) {
 	            SDL_SetRenderDrawColor(renderer,
 	            	200*(animal->age/animal->max_age),
 	            	200*(animal->age/animal->max_age),
 	            	200*(animal->age/animal->max_age), 255);
+	       		SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
+	        }
 	        else if (std::shared_ptr<Squirrel> squirrel = std::dynamic_pointer_cast<Squirrel>(animal)) {
 	        	if (squirrel->on_tree) y -= 50;
 	        	SDL_SetRenderDrawColor(renderer,
 	        		255*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)),
 	        		128*(1-static_cast<float>(animal->age)/static_cast<float>(animal->max_age)), 0, 255);
+	        	SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
 	        }
-	        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
+	        else if (std::shared_ptr<Person> person = std::dynamic_pointer_cast<Person>(animal)) {
+	        	if (!person->in_house) {
+					SDL_SetRenderDrawColor(renderer, 255, 200, 200, 255);
+					SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
+	        	}
+	        }
 	    }
     }
-
-    for (auto person : people)
-    {
-    	if (!person->in_house) {
-	    	float x = person->pos.x - player.pos.x;
-	        float y = person->pos.y - player.pos.y;
-
-	        if (abs(x) < ScreenCenterX && abs(y) < ScreenCenterY*.5) {
-	        	float z = getZfromYcurberd(y, ScreenCenterY*2);
-
-	        	float size = 10;
-				vec2d start(x-size*.5, y);
-				vec2d end(x+size*.5, y);
-				float visual_size = ((start-end)*z).get_length();
-
-		        SDL_SetRenderDrawColor(renderer, 255, 200, 200, 255);
-		        SDL_RenderFillCircle(renderer,  ScreenCenterX+x*z, ScreenCenterY+y*z, visual_size*.5);
-	}}}
 }
 
 void World::update_stats() {
@@ -594,12 +599,18 @@ void World::draw_mini_map(SDL_Renderer* renderer)
 
 	for (const auto& animal : animals)
     {
-        if (std::dynamic_pointer_cast<Cat>(animal))
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        else if (std::dynamic_pointer_cast<Squirrel>(animal))
-        	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
+    	if (!animal->in_house) {
+    		if (std::dynamic_pointer_cast<Cat>(animal))
+	            SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	        else if (std::dynamic_pointer_cast<Squirrel>(animal))
+	        	SDL_SetRenderDrawColor(renderer, 255, 128, 0, 255);
+	        else if (std::dynamic_pointer_cast<Person>(animal))
+	        	SDL_SetRenderDrawColor(renderer, 200, 100, 100, 255);
+	        else
+	        	SDL_SetRenderDrawColor(renderer, 255, 192, 203, 255);
 
-        SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
+	        SDL_RenderFillCircle(renderer, animal->pos.x * width / chunk_size, animal->pos.y * height / chunk_size, 1);
+    	}
     }
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     if (player.in_house)

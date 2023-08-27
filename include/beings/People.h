@@ -2,7 +2,6 @@
 
 #include "utils.h"
 #include "beings/Animals.h"
-#include "terrain/Structures.h"
 
 struct Relation;
 
@@ -12,11 +11,10 @@ class Person : public Animal
 	float money = 0;
 
 public:
-	std::shared_ptr<House> in_house = nullptr;
 	std::shared_ptr<House> home = nullptr;
 	std::shared_ptr<House> work = nullptr;
 	Person(vec2d pos);
-	void updatePers(float brightness);
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 };
 
 struct Relation
