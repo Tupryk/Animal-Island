@@ -95,25 +95,61 @@ World::World() : player(vec2d(2000, 3232))
     #endif
 
     #if GENERATE_PEOPLE
-    	std::shared_ptr<House> house0 = std::make_shared<House>(chunks[35][50].coor);
-		chunks[35][50].structures.push_back(house0);
-
-		std::shared_ptr<House> house1 = std::make_shared<House>(chunks[30][50].coor);
-		chunks[30][50].structures.push_back(house1);
-
-		std::shared_ptr<Person> person0 = std::make_shared<Person>(chunks[35][50].coor);
-		person0->home = house0;
-		person0->work = house1;
-		animals.push_back(person0);
-
-		std::shared_ptr<House> house2 = std::make_shared<House>(chunks[32][47].coor);
-		chunks[32][47].structures.push_back(house2);
-
-		std::shared_ptr<Person> person1 = std::make_shared<Person>(chunks[32][47].coor);
-		person1->home = house2;
-		person1->work = house1;
-		animals.push_back(person1);
+    	// generate_spiral_village(3, 20, vec2d(35, 50));
+    	generate_grid_village(vec2d(5, 2), vec2d(2, 3), vec2d(30, 50));
     #endif
+}
+
+void World::generate_spiral_village(float radious_step, float angle_step, vec2d origin)
+{
+	unsigned int house_count = 6;
+	float angle = (rand()%1000/.001)*M_PI*2;
+	vec2d start_dir(cos(angle), sin(angle));
+
+	for (int i = 1; i < house_count+1; i++) {
+		start_dir = start_dir.rotate(angle_step*i);
+		vec2d npos = start_dir * (log(i)*radious_step) + origin;
+		unsigned int house_chunk_x = npos.x;
+		unsigned int house_chunk_y = npos.y;
+
+		unsigned int r = rand()%256, g = rand()%256, b = rand()%256;
+		unsigned int color[3] = { r, g, b };
+		std::shared_ptr<House> house = std::make_shared<House>(npos*chunk_size, color);
+		chunks[house_chunk_x][house_chunk_y].structures.push_back(house);
+
+		if (i != 0) {
+			std::shared_ptr<Person> person = std::make_shared<Person>(house->pos);
+			person->home = house;
+			person->work = house;
+			person->in_house = person->home;
+			person->pos = person->in_house->exit_door;
+			animals.push_back(person);
+		}
+	}
+}
+
+void World::generate_grid_village(vec2d size, vec2d spacing, vec2d origin)
+{
+	for (int i = 0; i < size.x; i++)
+		for (int j = 0; j < size.y; j++) {
+			vec2d npos = vec2d(i*spacing.x, j*spacing.y) + origin;
+			unsigned int house_chunk_x = npos.x;
+			unsigned int house_chunk_y = npos.y;
+
+			unsigned int r = rand()%256, g = rand()%256, b = rand()%256;
+			unsigned int color[3] = { r, g, b };
+			std::shared_ptr<House> house = std::make_shared<House>(npos*chunk_size, color);
+			chunks[house_chunk_x][house_chunk_y].structures.push_back(house);
+
+			if (i != 0) {
+				std::shared_ptr<Person> person = std::make_shared<Person>(house->pos);
+				person->home = house;
+				person->work = house;
+				person->in_house = person->home;
+				person->pos = person->in_house->exit_door;
+				animals.push_back(person);
+			}
+		}
 }
 
 std::shared_ptr<Animal> World::createAnimalCopy(const std::shared_ptr<Animal>& animal) {
@@ -143,6 +179,12 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 		    animals_viewed.insert(animals_viewed.end(), chunk->animals.begin(), chunk->animals.end());
 		    plants_viewed.insert(plants_viewed.end(), chunk->trees.begin(), chunk->trees.end());
 		}
+		// Remove self from list of viewed
+		auto new_end = std::remove_if(animals_viewed.begin(), animals_viewed.end(),
+		    [animal](const std::shared_ptr<StaticBody>& element) {
+		        return element == animal;
+	    	});
+   		animals_viewed.erase(new_end, animals_viewed.end());
 	} else {
 		for (auto body : animal->in_house->bodies_inside)
 			animals_viewed.push_back(std::dynamic_pointer_cast<Animal>(body));
@@ -233,10 +275,11 @@ void World::update()
 		}
 
 	 for (auto animal : animals) {
-        unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
-		unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
-		chunks[cx][cy].animals.push_back(animal);
-		if (animal->in_house) animal->in_house->enter(animal);
+	 	if (animal->in_house) animal->in_house->enter(animal);
+	 	else {
+	        unsigned int cx = animal->pos.x / static_cast<float>(chunk_size);
+			unsigned int cy = animal->pos.y / static_cast<float>(chunk_size);
+			chunks[cx][cy].animals.push_back(animal); }
 	}
 
 	// Store World data
@@ -368,70 +411,7 @@ void World::draw_world(SDL_Renderer* renderer)
 				tree->visual.draw(renderer, gradient);
 			}
 			for (auto house : chunks[pcx+i][pcy+j].structures)
-			{
-				float size = 25;
-
-				float tx = house->pos.x-player.pos.x-size;
-				float ty = house->pos.y-player.pos.y;
-				float tz = getZfromYcurberd(ty, ScreenCenterY*2);
-
-				vec2d start(tx-size*.5, ty);
-				vec2d end(tx+size*.5, ty);
-				float visual_size = ((start-end)*tz).get_length();
-
-				float bty = house->pos.y-player.pos.y-size;
-				float btz = getZfromYcurberd(bty, ScreenCenterY*2);
-				{
-			    	Sint16 vertsx[4] = {
-			    		static_cast<Sint16>(ScreenCenterX+(tx-visual_size*.5)*tz),
-			    		static_cast<Sint16>(ScreenCenterX+(tx+visual_size*.5)*tz),
-			    		static_cast<Sint16>(ScreenCenterX+(tx+visual_size*.5)*btz),
-			    		static_cast<Sint16>(ScreenCenterX+(tx-visual_size*.5)*btz)};
-				    Sint16 vertsy[4] = {
-				    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
-				    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
-				    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
-				    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz)};
-
-				    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 160, 80, 80, 255);
-				}
-
-				SDL_Rect rect;
-			    rect.x = ScreenCenterX+(tx-visual_size*.5)*tz;
-			    rect.y = ScreenCenterY+(ty-visual_size)*tz;
-			    rect.w = visual_size*tz;
-			    rect.h = visual_size*tz;
-
-			    SDL_SetRenderDrawColor(renderer, 128, 64, 64, 255);
-			    SDL_RenderFillRect(renderer, &rect);
-
-			    if (rect.x != 0) {
-			    	if (rect.x > ScreenCenterX) {
-			    		Sint16 ftx = ScreenCenterX+(tx-visual_size*.5)*tz;
-				    	Sint16 btx = ScreenCenterX+(tx-visual_size*.5)*btz;
-				    	Sint16 vertsx[4] = { ftx, ftx, btx, btx };
-					    Sint16 vertsy[4] = {
-					    	static_cast<Sint16>(ScreenCenterY+ty*tz),
-					    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
-					    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
-					    	static_cast<Sint16>(ScreenCenterY+bty*btz)};
-
-					    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 96, 48, 48, 255);
-				    }
-				    else if (rect.x < ScreenCenterX) {
-				    	Sint16 ftx = ScreenCenterX+(tx+visual_size*.5)*tz;
-				    	Sint16 btx = ScreenCenterX+(tx+visual_size*.5)*btz;
-				    	Sint16 vertsx[4] = { ftx, ftx, btx, btx };
-					    Sint16 vertsy[4] = {
-					    	static_cast<Sint16>(ScreenCenterY+ty*tz),
-					    	static_cast<Sint16>(ScreenCenterY+(ty-visual_size)*tz),
-					    	static_cast<Sint16>(ScreenCenterY+(bty-visual_size)*btz),
-					    	static_cast<Sint16>(ScreenCenterY+bty*btz)};
-
-					    filledPolygonRGBA(renderer, vertsx, vertsy, 4, 96, 48, 48, 255);
-				    }
-			    }
-			}
+				house->draw_outside(renderer, player.pos);
 		}
 		if (j == 0) {
 			// Player

@@ -15,7 +15,7 @@
 #include "beings/Player.h"
 #include "visuals/Chunks.h"
 
-#define GENERATE_ANIMALS 1
+#define GENERATE_ANIMALS 0
 #define GENERATE_PEOPLE 1
 #define DAYTIME -1 // -1: loops, 0: night, 1: daytime
 #define KEEP_STATS 0
@@ -55,6 +55,8 @@ class World
 	Chunk* pos2chunk(vec2d pos);
 	std::vector<Chunk*> get_chunks_viewed_cone(float fov, float distance, vec2d pos, vec2d dir);
 	std::vector<Chunk*> get_chunks_viewed_circle(float distance, vec2d pos);
+	void generate_spiral_village(float radious_step, float angle_step, vec2d origin);
+	void generate_grid_village(vec2d size, vec2d spacing, vec2d origin);
 
 public:
 	// Will be removed once a good keyboard interface is implemented

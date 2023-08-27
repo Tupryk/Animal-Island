@@ -26,9 +26,9 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 	bool free = false; // Marker for checking if a person can continue with their free time or if they should go do something else.
 
 	// Busy
-	if (brightness <= .3 || (day%7 < 5 && brightness >= .5)) {
+	if (brightness <= .3 || (day%7 < 5 && brightness >= .8)) {
 		// Go Home (sleep)
-		if (brightness <= .3 && in_house != home)
+		if (brightness <= .3 && home && in_house != home)
 		{
 			if (in_house != nullptr && goTo(in_house->exit_door)) {
 				pos = in_house->pos;
@@ -39,7 +39,7 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 			}
 		}
 		// Go to Work
-		else if (day%7 < 5 && brightness >= .5 && in_house != work)
+		else if (day%7 < 5 && brightness >= .8 && work && in_house != work)
 		{
 			if (in_house != nullptr && goTo(in_house->exit_door)) {
 				pos = in_house->pos;
@@ -57,9 +57,11 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 		if (talking) {
 			process_inbox();
 		} else {
-			if (in_house != nullptr && goTo(in_house->exit_door)) {
-				pos = in_house->pos;
-				in_house = nullptr;
+			if (in_house != nullptr) {
+				if (goTo(in_house->exit_door)) {
+					pos = in_house->pos;
+					in_house = nullptr;
+				}
 			} else {
 				std::vector<std::shared_ptr<StaticBody>> candidates;
 				for (auto animal : animals)
@@ -69,7 +71,7 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 				if (!candidates.empty()) {
 					// Initiate conversation
 					std::shared_ptr<Person> target = std::dynamic_pointer_cast<Person>(getClosest(candidates));
-					if (goTo(target, 70)) {
+					if (goTo(target)) {
 						talking = target;
 						send_message(target, "hello");
 					}
