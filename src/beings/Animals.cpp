@@ -39,19 +39,22 @@ AnimalState Animal::update_basic()
 	return AnimalState::DEFAULT;
 }
 
-bool Animal::goTo(std::shared_ptr<StaticBody> target)
+bool Animal::goTo(std::shared_ptr<StaticBody> target) { return goTo(target, reach); }
+bool Animal::goTo(vec2d target) { return goTo(target, reach); }
+
+bool Animal::goTo(std::shared_ptr<StaticBody> target, float offset)
 {
 	vec2d targetDir(target->pos.x - pos.x, target->pos.y - pos.y);
-	bool reached_target = targetDir.get_length() < reach;
+	bool reached_target = targetDir.get_length() < offset;
 	if (reached_target) acc = vec2d(0, 0);
 	else acc = targetDir.norm() * max_speed;
 	return reached_target;
 }
 
-bool Animal::goTo(vec2d target)
+bool Animal::goTo(vec2d target, float offset)
 {
 	vec2d targetDir(target.x - pos.x, target.y - pos.y);
-	bool reached_target = targetDir.get_length() < reach;
+	bool reached_target = targetDir.get_length() < offset;
 	if (reached_target) acc = vec2d(0, 0);
 	else acc = targetDir.norm() * max_speed;
 	return reached_target;
@@ -86,7 +89,7 @@ Cat::Cat(vec2d pos) : Animal() {
 
 AnimalState Cat::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
-	if (health <= 0) return AnimalState::DEAD;
+	if (health <= 0 || neighbors[5]->type == ChunkTypes::SEA) return AnimalState::DEAD;
 
 	// Prepare candidates for prey
 	std::vector<std::shared_ptr<StaticBody>> candidates;
@@ -122,7 +125,7 @@ Squirrel::Squirrel(vec2d pos) : Animal() {
 
 AnimalState Squirrel::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
 {
-	if (health <= 0) return AnimalState::DEAD;
+	if (health <= 0 || neighbors[5]->type == ChunkTypes::SEA) return AnimalState::DEAD;
 
 	if (brightness <= .3) {
 		// Get trees

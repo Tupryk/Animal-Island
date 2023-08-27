@@ -62,7 +62,9 @@ struct Animal : RigidBody
 	virtual AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 	virtual ~Animal() = default;
 	virtual std::shared_ptr<Animal> build_child();
+	bool goTo(std::shared_ptr<StaticBody> target, float offset);
 	bool goTo(std::shared_ptr<StaticBody> target);
+	bool goTo(vec2d target, float offset);
 	bool goTo(vec2d target);
 };
 

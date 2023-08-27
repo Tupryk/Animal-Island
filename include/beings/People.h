@@ -22,9 +22,10 @@ public:
 	std::shared_ptr<House> home = nullptr;
 	std::shared_ptr<House> work = nullptr;
 	Person(vec2d pos);
-	void send_message(std::shared_ptr<Person> sender, std::string message);
+	void send_message(std::shared_ptr<Person> to, std::string message);
 	void process_inbox(bool end_all=false);
 	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
+	void put_inbox(Message mess);
 };
 
 struct Message

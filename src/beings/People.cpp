@@ -7,7 +7,6 @@ Person::Person(vec2d pos) : Animal() {
 	is_male = rand()%2 == 0;
 	look_dir = vec2d((rand()%20-10)*.1*max_speed, (rand()%20-10)*.1*max_speed);
 	see_distance = 5;
-	reach = 40;
 }
 
 AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness)
@@ -70,9 +69,9 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 				if (!candidates.empty()) {
 					// Initiate conversation
 					std::shared_ptr<Person> target = std::dynamic_pointer_cast<Person>(getClosest(candidates));
-					if (goTo(target)) {
+					if (goTo(target, 70)) {
 						talking = target;
-						target->send_message(std::dynamic_pointer_cast<Person>(shared_from_this()), "hello");
+						send_message(target, "hello");
 					}
 				}
 				else wander();
@@ -87,10 +86,12 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 	return AnimalState::DEFAULT;
 }
 
-void Person::send_message(std::shared_ptr<Person> sender, std::string message) {
-	Message mess = { sender, message };
-	inbox.push_back(mess);
+void Person::send_message(std::shared_ptr<Person> reciever, std::string message) {
+	Message mess = { std::dynamic_pointer_cast<Person>(shared_from_this()), message };
+	reciever->put_inbox(mess);
 }
+
+void Person::put_inbox(Message mess) { inbox.push_back(mess); }
 
 void Person::process_inbox(bool end_all)
 {
@@ -99,16 +100,16 @@ void Person::process_inbox(bool end_all)
 		// std::cout << shared_from_this() << " recieved: " << inbox[i].text << std::endl;
 		if (talking) {
 			if (inbox[i].text == "bye" || rand()%100 >= social || end_all) {
-				talking->send_message(std::dynamic_pointer_cast<Person>(shared_from_this()), "bye");
+				send_message(talking, "bye");
 				// std::cout << shared_from_this() << " responded: " << "bye" << std::endl;
 				talking = nullptr;
 			} else {
-				talking->send_message(std::dynamic_pointer_cast<Person>(shared_from_this()), "blah");
+				talking->send_message(talking, "blah");
 				// std::cout << shared_from_this() << " responded: " << "blah" << std::endl;
 			}
 		} else if (inbox[i].text == "hello") {
 			talking = inbox[i].sender;
-			talking->send_message(std::dynamic_pointer_cast<Person>(shared_from_this()), "hello");
+			send_message(talking, "hello");
 			// std::cout << shared_from_this() << " responded: " << "hello" << std::endl;
 		}
 		inbox.erase(inbox.begin() + i);

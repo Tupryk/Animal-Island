@@ -109,7 +109,7 @@ World::World() : player(vec2d(2000, 3232))
 		std::shared_ptr<House> house2 = std::make_shared<House>(chunks[32][47].coor);
 		chunks[32][47].structures.push_back(house2);
 
-		std::shared_ptr<Person> person1 = std::make_shared<Person>(chunks[35][50].coor);
+		std::shared_ptr<Person> person1 = std::make_shared<Person>(chunks[32][47].coor);
 		person1->home = house2;
 		person1->work = house1;
 		animals.push_back(person1);
@@ -162,9 +162,9 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 			animal->pos.y = 0;
     }
     else {
-    	cx = animal->pos.x / static_cast<float>(chunk_size);
-		cy = animal->pos.y / static_cast<float>(chunk_size);
-		if (chunks[cx][cy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);
+    	unsigned int ncx = animal->pos.x / static_cast<float>(chunk_size);
+		unsigned int ncy = animal->pos.y / static_cast<float>(chunk_size);
+		if (chunks[ncx][ncy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);
     }
 
     return status;
