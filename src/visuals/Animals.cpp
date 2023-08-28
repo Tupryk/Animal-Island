@@ -74,7 +74,7 @@ void AnimalVisual::update()
 {
 	float elevation = sin(pos.x*.05)*10;
 	pos.x -= speed;
-	pos.y = elevation + 200;
+	pos.y = elevation;
 	head.update(head_origin + vec2d(-50, -elevation));
 	for (int i = 0; i < limb_count; i++)
 	{
@@ -94,7 +94,12 @@ void AnimalVisual::update()
 	}
 }
 
-void AnimalVisual::draw(SDL_Renderer* renderer)
+void AnimalVisual::setScale(float new_size)
+{
+	scale = new_size/original_size;
+}
+
+void AnimalVisual::draw(SDL_Renderer* renderer, vec2d vpos)
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	for (int i = 0; i < limb_count; i++) {
@@ -106,52 +111,54 @@ void AnimalVisual::draw(SDL_Renderer* renderer)
 				vec2d p0 = seg.origin + rec;
 				vec2d p1 = seg.origin - rec;
 				filledTrigonRGBA(renderer,
-					p0.x + 300, p0.y + pos.y, p1.x + 300, p1.y + pos.y,
-					seg.end.x + 300, seg.end.y + pos.y,
+					p0.x + vpos.x, p0.y + pos.y + vpos.y,
+					p1.x + vpos.x, p1.y + pos.y + vpos.y,
+					seg.end.x + vpos.x, seg.end.y + pos.y + vpos.y,
 					0, 0, 0, 255);
 			} else {
 			    thickLineRGBA(renderer,
-			    	seg.origin.x + 300, seg.origin.y + pos.y,
-			    	seg.end.x + 300, seg.end.y + pos.y,
+			    	seg.origin.x + vpos.x, seg.origin.y + pos.y + vpos.y,
+			    	seg.end.x + vpos.x, seg.end.y + pos.y + vpos.y,
 			    	leg_width, 0, 0, 0, 255);
-    			SDL_RenderFillCircle(renderer, seg.end.x + 300, seg.end.y + pos.y, leg_width*.5-1);
+			    if (j == limbs[i].segs.size()-1)
+			    	SDL_RenderFillCircle(renderer, seg.origin.x + vpos.x, seg.origin.y + pos.y + vpos.y, leg_width);
+    			SDL_RenderFillCircle(renderer, seg.end.x + vpos.x, seg.end.y + pos.y + vpos.y, leg_width*.5-1);
 			}
 		}
 	}
 	for (int j = 0; j < head.segs.size(); j++) {
 		Segment seg = head.segs[j];
 	    thickLineRGBA(renderer,
-	    	seg.origin.x + 300,
-	    	seg.origin.y + pos.y,
-	    	seg.end.x + 300,
-	    	seg.end.y + pos.y,
+	    	seg.origin.x + vpos.x,
+	    	seg.origin.y + pos.y + vpos.y,
+	    	seg.end.x + vpos.x,
+	    	seg.end.y + pos.y + vpos.y,
 	    	30, 0, 0, 0, 255);
 	    if (j != 0)
-	   		SDL_RenderFillCircle(renderer, seg.end.x + 300, seg.end.y + pos.y, 14);
+	   		SDL_RenderFillCircle(renderer, seg.end.x + vpos.x, seg.end.y + pos.y + vpos.y, 14);
 	}    
-    unsigned int width = 200;
-    unsigned int height = 50;
+    unsigned int width = 225;
+    unsigned int height = 60;
     SDL_Rect rect;
-	rect.x = 300-width*.5;
-	rect.y = pos.y-height*.5;
+	rect.x = vpos.x-width*.5+10;
+	rect.y = pos.y-height*.5 + vpos.y;
 	rect.w = width;
 	rect.h = height;
 	SDL_RenderFillRect(renderer, &rect);
 
-	vec2d horigin = head.segs[0].end + vec2d(280, pos.y);
-	/*
+	vec2d horigin = head.segs[0].end + vec2d(-20, pos.y) + vpos;
+	
+	// Head
 	SDL_RenderFillAlmond(renderer,
 		horigin, vec2d(0, -50), vec2d(0, 50), 80, 80);
+	// Ears
 	SDL_RenderFillMoon(renderer,
-		horigin, vec2d(0, 25), vec2d(0, 105), 40, 100, 255, 255);
+		horigin+vec2d(20, -30), vec2d(7, 0), vec2d(-47, 0), 20, 60);
+	SDL_RenderFillMoon(renderer,
+		horigin+vec2d(0, -27), vec2d(7, 0), vec2d(-47, 0), 20, 60);
+	// Eye
+	SDL_RenderFillMoon(renderer,
+		horigin+vec2d(0, 30), vec2d(0, -10), vec2d(0, 50), 40, 80, 255, 255);
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	SDL_RenderFillCircle(renderer, horigin.x, horigin.y, 15);
-	*/
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-	SDL_RenderFillCircle(renderer, horigin.x-10, horigin.y-10, 40);
-	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-	SDL_RenderFillCircle(renderer, horigin.x+10, horigin.y-50, 20);
-
-	SDL_RenderFillMoon(renderer,
-		horigin, vec2d(10, -50), vec2d(-10, -10), 20, 40, 255);
 }

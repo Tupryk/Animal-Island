@@ -202,8 +202,7 @@ AnimalState World::update_animal(const std::shared_ptr<Animal>& animal)
 			animal->pos.x = 0;
 		if (animal->pos.y < 0)
 			animal->pos.y = 0;
-    }
-    else {
+    } else {
     	unsigned int ncx = animal->pos.x / static_cast<float>(chunk_size);
 		unsigned int ncy = animal->pos.y / static_cast<float>(chunk_size);
 		if (chunks[ncx][ncy].type == ChunkTypes::SEA) animal->pos = vec2d(cx*chunk_size, cy*chunk_size);

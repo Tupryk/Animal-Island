@@ -71,5 +71,5 @@ float crossProduct(vec2d v1, vec2d v2);
 int SDL_RenderDrawCircle(SDL_Renderer * renderer, int x, int y, int radius);
 int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius);
 
-int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r=0, int g=0, int b=0);
-int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r=0, int g=0, int b=0);
+int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r=0, int g=0, int b=0, int alpha=255);
+int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r=0, int g=0, int b=0, int alpha=255);

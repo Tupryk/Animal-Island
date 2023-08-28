@@ -40,12 +40,16 @@ class AnimalVisual
 	bool target_reseting[limb_count];
 	float target_limit = 50;
 
+	float original_size = 300;
+	float scale = 1;
+
 	Limb head;
 	vec2d head_origin;
 	float leg_width = 15;
 
 public:
 	AnimalVisual();
+	void setScale(float new_size);
 	void update();
-	void draw(SDL_Renderer* renderer);
+	void draw(SDL_Renderer* renderer, vec2d vpos);
 };

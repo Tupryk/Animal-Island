@@ -133,8 +133,8 @@ int SDL_RenderFillCircle(SDL_Renderer * renderer, int x, int y, int radius)
     return status;
 }
 
-int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b)
-{
+int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b, int alpha)
+{ // One circle needs to have a positive y value and the other a negative y value.
     const unsigned int s_count = 8;
     unsigned int vert_counter = 0;
     static const unsigned int total_verts = s_count*2 + 2;
@@ -199,12 +199,12 @@ int SDL_RenderFillAlmond(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d
     }
 
     // draw
-    filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
+    filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, alpha);
     return 0;
 }
 
-int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b)
-{
+int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d origin1, float radius0, float radius1, int r, int g, int b, int alpha)
+{ // One circle needs to have a positive y value and the other a negative y value.
     const unsigned int s_count = 8;
     unsigned int vert_counter = 0;
     static const unsigned int total_verts = s_count*2 + 2;
@@ -240,19 +240,17 @@ int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d o
     vec2d normed = (origin0-origin1).norm();
     vec2d normed_rot = normed.rotate(90);
     const float s_len = inter_len/(s_count+1);
+
     for (int i = 1; i < s_count+1; i++)
     {
         float x = s_len*i - inter_len*.5;
-        float y_up = -(sqrt(radius1*radius1-x*x) + origin1.get_length());
-        vec2d up = normed_rot*x + normed*y_up;
+        float y_up = sqrt(radius1*radius1-x*x) - origin1.get_length();
+        vec2d up = (normed_rot*x) + (normed*y_up);
         up = up + pos;
 
         vertsx[vert_counter] = static_cast<int>(up.x);
         vertsy[vert_counter] = static_cast<int>(up.y);
         vert_counter++;
-
-        SDL_SetRenderDrawColor(renderer, 255, 0, 255, 255);
-        SDL_RenderFillCircle(renderer, up.x, up.y, 3);
     }
     vertsx[vert_counter] = static_cast<int>(inter0.x);
     vertsy[vert_counter] = static_cast<int>(inter0.y);
@@ -261,22 +259,16 @@ int SDL_RenderFillMoon(SDL_Renderer* renderer, vec2d pos, vec2d origin0, vec2d o
     for (int i = s_count; i >= 1; i--)
     {
         float x = s_len*i - inter_len*.5;
-        float y_down = -(sqrt(radius0*radius0-x*x) + origin0.get_length());
+        float y_down = sqrt(radius0*radius0-x*x) + origin0.get_length();
         vec2d down = normed_rot*x + normed*y_down;
         down = down + pos;
 
         vertsx[vert_counter] = static_cast<int>(down.x);
         vertsy[vert_counter] = static_cast<int>(down.y);
         vert_counter++;
-
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255);
-        SDL_RenderFillCircle(renderer, down.x, down.y, 3);
     }
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-    SDL_RenderFillCircle(renderer, inter0.x, inter0.y, 3);
-    SDL_RenderFillCircle(renderer, inter1.x, inter1.y, 3);
     // draw
-    //filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, 255);
+    filledPolygonRGBA(renderer, vertsx, vertsy, vert_counter, r, g, b, alpha);
     return 0;
 }
 
