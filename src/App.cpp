@@ -4,9 +4,9 @@ App::App() : world(), av(), wv(), tv() { srand( time( NULL ) ); }
 
 void App::update()
 {
-	//world.update();
-	av.update();
-	av.setScale(20);
+	world.update();
+	//av.update();
+	//av.setScale(20);
 	//wv.update(vec2d(-100, -100));
 	//tv.update();
 	//tv.setPos(vec2d(WINDOW_WIDTH*.5, WINDOW_HEIGHT*.8));
@@ -15,8 +15,8 @@ void App::update()
 
 void App::draw()
 {
- 	//world.draw(renderer);
- 	av.draw(renderer, vec2d(WINDOW_WIDTH*.5, WINDOW_HEIGHT*.5));
+ 	world.draw(renderer);
+ 	//av.draw(renderer, vec2d(WINDOW_WIDTH*.5, WINDOW_HEIGHT*.5));
  	//SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 	//SDL_RenderFillCircle(renderer, WINDOW_WIDTH*.5, WINDOW_HEIGHT*.5, 15);
  	//wv.draw(renderer);
