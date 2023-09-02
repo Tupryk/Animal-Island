@@ -26,12 +26,11 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 		return AnimalState::DEFAULT;
 	}
 
-	bool free = false; // Marker for checking if a person can continue with their free time or if they should go do something else.
-
 	// Busy
 	if (brightness <= .3 || (day%7 < 5 && brightness >= .8)) {
+		if (talking) process_inbox(true);
 		// Go Home (sleep)
-		if (brightness <= .3 && home && in_house != home)
+		else if (brightness <= .3 && home && in_house != home)
 		{
 			if (in_house != nullptr && goTo(in_house->exit_door)) {
 				pos = in_house->pos;
@@ -53,38 +52,29 @@ AnimalState Person::update(Chunk* neighbors[], std::vector<std::shared_ptr<Anima
 			}
 		} else wander();
 	// Free time
-	} else free = true;
-
-	// Free time manager
-	if (free) {
-		if (talking) {
-			process_inbox();
-		} else {
-			if (in_house != nullptr) {
-				if (goTo(in_house->exit_door)) {
-					pos = in_house->pos;
-					in_house = nullptr;
-				}
-			} else if (talkative && conversation_tokens > 0) {
-				std::vector<std::shared_ptr<StaticBody>> candidates;
-				for (auto animal : animals)
-					if (std::dynamic_pointer_cast<Person>(animal) && std::find(talked_to.begin(), talked_to.end(), animal) == talked_to.end())
-						candidates.push_back(animal);
-
-				if (!candidates.empty()) {
-					// Initiate conversation
-					std::shared_ptr<Person> target = std::dynamic_pointer_cast<Person>(getClosest(candidates));
-					if (goTo(target)) {
-						talking = target;
-						send_message(target, "hello");
-						talked_to.push_back(target);
-					}
-				}
-				else wander();
-			} else wander();
-		}
 	} else if (talking)
-		process_inbox(true);
+		process_inbox();
+	else if (in_house != nullptr) {
+		if (goTo(in_house->exit_door)) {
+			pos = in_house->pos;
+			in_house = nullptr;
+		}
+	} else if (talkative && conversation_tokens > 0) {
+		std::vector<std::shared_ptr<StaticBody>> candidates;
+		for (auto animal : animals)
+			if (std::dynamic_pointer_cast<Person>(animal) && std::find(talked_to.begin(), talked_to.end(), animal) == talked_to.end())
+				candidates.push_back(animal);
+
+		if (!candidates.empty()) {
+			// Initiate conversation
+			std::shared_ptr<Person> target = std::dynamic_pointer_cast<Person>(getClosest(candidates));
+			if (goTo(target)) {
+				talking = target;
+				send_message(target, "hello");
+				talked_to.push_back(target);
+			}
+		}
+	} else wander();
 
 	if (in_house == work) money++;
 	update_pos();
@@ -97,7 +87,26 @@ void Person::send_message(std::shared_ptr<Person> reciever, std::string message)
 	reciever->put_inbox(mess);
 }
 
+void Person::send_message()
+{
+	char to_be_sent = '';
+	if (token_buffer <= 0) {
+		to_be_sent = send_queue[0];
+    	send_queue.erase(0, 1);
+    	token_buffer = token_period;
+	} else
+		 token_buffer--;
+	taking->put_inbox(to_be_sent);
+}
+
 void Person::put_inbox(Message mess) { inbox.push_back(mess); }
+void Person::put_inbox(char token) { inbox.push_back(token); }
+
+/*
+void Person::process_inbox(bool end_all);
+{
+
+}*/
 
 void Person::process_inbox(bool end_all)
 {

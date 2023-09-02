@@ -290,6 +290,7 @@ void World::update()
 void World::update_time()
 {
 	day_cycle++;
+	temperature = (sin((day_cycle*2*M_PI+M_PI)/day_duration)*20+10)+sin(year_cycle*2*M_PI/year_duration)*4;
 	if (day_cycle >= day_duration) {
 		day_cycle = 0;
 		year_cycle++;

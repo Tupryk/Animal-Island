@@ -34,6 +34,7 @@ class World
 	unsigned int year_duration = 365;
 	float sun_angle = 0;
 	float brightness = 0;
+	float temperature = 0;
 
 	// Shared ptr for different animal types
 	std::vector<std::shared_ptr<Animal>> animals;

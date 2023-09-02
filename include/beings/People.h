@@ -10,25 +10,35 @@ struct Message;
 
 class Person : public Animal
 {
-	std::vector<Relation> relations;
-	std::vector<Message> inbox;
 	float money = 0;
-	unsigned int social = 50; // From 0% to 100%, how likely is it that person will start or end a conversation.
 	unsigned int day = 0; // 0 to 6. If this is 5 or 6, person will not go to work.
-	std::shared_ptr<Person> talking = nullptr;
 	bool sleeping = true;
+
+	// Speech
+	bool talkative = true; // Personality trait
+	unsigned int token_buffer = 0; // Counter for checking if token (character in message string can be sent).
+	unsigned int token_period = 60; // Ticks for each character sent.
+	unsigned int social = 50; // From 0% to 100%, how likely is it that person will start or end a conversation.
 	unsigned int conversation_tokens = 5*social*.01; // How many times per day can a person start a conversation. (max 5)
+	std::string send_queue;
+
+
+	std::vector<Message> inbox;
+	std::vector<Relation> relations;
+	std::shared_ptr<Person> talking = nullptr;
 	std::vector<std::shared_ptr<Animal>> talked_to;
-	bool talkative = true;
 
 public:
 	std::shared_ptr<House> home = nullptr;
 	std::shared_ptr<House> work = nullptr;
+
 	Person(vec2d pos);
-	void send_message(std::shared_ptr<Person> to, std::string message);
-	void process_inbox(bool end_all=false);
-	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 	void put_inbox(Message mess);
+	void put_inbox(char token);
+	void process_inbox(bool end_all=false);
+	void send_message(std::shared_ptr<Person> to, std::string message);
+	void send_message();
+	AnimalState update(Chunk* neighbors[], std::vector<std::shared_ptr<Animal>> animals, std::vector<std::shared_ptr<Tree>> plants, float brightness);
 };
 
 struct Message
