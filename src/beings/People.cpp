@@ -102,11 +102,10 @@ void Person::send_message()
 void Person::put_inbox(Message mess) { inbox.push_back(mess); }
 void Person::put_inbox(char token) { inbox.push_back(token); }
 
-/*
 void Person::process_inbox(bool end_all);
 {
 
-}*/
+}
 
 void Person::process_inbox(bool end_all)
 {

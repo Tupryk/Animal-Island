@@ -22,7 +22,6 @@ class Person : public Animal
 	unsigned int conversation_tokens = 5*social*.01; // How many times per day can a person start a conversation. (max 5)
 	std::string send_queue;
 
-
 	std::vector<Message> inbox;
 	std::vector<Relation> relations;
 	std::shared_ptr<Person> talking = nullptr;
